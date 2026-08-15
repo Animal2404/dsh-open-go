@@ -14,7 +14,7 @@ Open GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置�
 - **本月**：绿色块，按模型柱状条（top 4）
 - 金额来自官方控制台，精确到分
 
-**设置面板配置**（v0.6.0+）
+**设置面板配置**（当前版本已内置）
 - 在 DSH 的「设置 → 插件 → opencode-quota」中直接填写 workspace id 和登录 cookie
 - cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
 
@@ -51,7 +51,7 @@ dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
 
 官方账单需要两步（一次性，约 2 分钟），**任选一种配置方式**：
 
-### 方式 1：设置面板（推荐，v0.6.0+）
+### 方式 1：设置面板（推荐，当前版本已内置）
 
 1. DSH Web → 设置 → 插件 → opencode-quota
 2. 填写：
