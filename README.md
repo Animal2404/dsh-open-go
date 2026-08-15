@@ -20,6 +20,20 @@ Open GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置�
 
 **窄侧栏**（rail 模式）自动退化为小图标按钮。
 
+## 截图
+
+侧边栏小组件（额度 + 官方账单）：
+
+![主界面](assets/screenshot-main.png)
+
+账单配置弹窗（⚙ 齿轮打开，填写 workspace id 和 cookie）：
+
+![配置弹窗](assets/screenshot-config.png)
+
+组件特写（今日/本月按模型明细）：
+
+![特写](assets/screenshot-closeup.png)
+
 ## 安装
 
 ```sh
