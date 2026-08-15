@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-opencode-quota",
-  "version": "0.6.3",
+  "version": "0.6.5",
   "description": "Open GO 套餐额度 + 官方账单侧边栏小组件：滚动/周/月三档额度百分比 + 24时制更新时间 + 今日/本月官方账单柱状条；标题旁 ⚙ 弹窗直接配置 workspace id 与登录 cookie（写入凭证文件），一键刷新全部。凭据不出服务器。",
   "private": true,
   "type": "module",
