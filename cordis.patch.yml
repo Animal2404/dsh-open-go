@@ -1,0 +1,5 @@
+# dsh-opencode-quota 的激活补丁。
+# 经 `dsh plugin add` 安装后自动加入 profile bundles，启动时挂载。
+- insert:
+    - id: opencode-quota
+      name: '@dsh-external/dsh-opencode-quota'
