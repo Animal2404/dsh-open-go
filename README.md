@@ -1,64 +1,87 @@
-# 鈿?dsh-opencode-quota
+# ⚡ dsh-opencode-quota
 
-OpenCode GO 濂楅棰濆害 + 瀹樻柟璐﹀崟灏忕粍浠讹紝鎸傚湪 DSH Web 渚ц竟鏍?*璁剧疆鎸夐挳涓婃柟**锛坄sidebar.footer.action` 鎻掓Ы锛夈€?
-## 鍔熻兘
+OpenCode GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置按钮上方**（`sidebar.footer.action` 插槽）。
 
-**Open GO 棰濆害**锛堝畼鏂?usage 鎺ュ彛锛?- 婊氬姩 / 姣忓懆 / 姣忔湀涓夋。棰濆害鐧惧垎姣旀潯 + 閲嶇疆鏃堕棿
-- 鏍囬鏃佹樉绀?24 鏃跺埗鏇存柊鏃堕棿锛堝 `17:35 鏇存柊`锛?- 鐐瑰嚮 鈫?绔嬪嵆鍒锋柊锛屾瘡 5 鍒嗛挓鑷姩杞
+## 功能
 
-**瀹樻柟璐﹀崟**锛坥pencode 鎺у埗鍙?getCosts RPC锛岄潪鏈湴浼扮畻锛?- **浠婃棩**锛氳摑鑹插潡锛屾寜妯″瀷鏌辩姸鏉★紙妯″瀷鍚?+ 鍗犳瘮% + 閲戦锛?- **鏈湀**锛氱豢鑹插潡锛屾寜妯″瀷鏌辩姸鏉★紙top 4锛?- 閲戦鏉ヨ嚜瀹樻柟鎺у埗鍙帮紝绮剧‘鍒板垎
+**Open GO 额度**（官方 usage 接口）
+- 滚动 / 每周 / 每月三档额度百分比条 + 重置时间
+- 标题旁显示 24 时制更新时间（如 `17:35 更新`）
+- 点击 ↻ **一键刷新全部**（额度 + 账单，跳过缓存），每 5 分钟自动轮询
 
-**绐勪晶鏍?*锛坮ail 妯″紡锛夎嚜鍔ㄩ€€鍖栦负灏忓浘鏍囨寜閽€?
-## 瀹夎
+**官方账单**（opencode 控制台 getCosts RPC，非本地估算）
+- **今日**：蓝色块，按模型柱状条（模型名 + 占比% + 金额）
+- **本月**：绿色块，按模型柱状条（top 4）
+- 金额来自官方控制台，精确到分
+
+**窄侧栏**（rail 模式）自动退化为小图标按钮。
+
+## 安装
 
 ```sh
-dsh plugin --profile web add https://github.com/Animal2404/dsh-opencode-quota
-# 閲嶅惎 dsh web 鐢熸晥
+# pnpm 9+ 需要 -w（workspace root）标志；dsh 转发器原样透传
+dsh plugin --profile web add -w https://github.com/Animal2404/dsh-opencode-quota
+
+# 若报 EPERM（profile 目录在工作区外被沙箱拦截），在允许写入 ~/.dsh 的权限下重试
+# 重启 dsh web 生效
 ```
 
-## 閰嶇疆鍑瘉锛垀/.dsh/.credentials.yaml锛?
-棰濆害鍔熻兘**闆堕厤缃?*锛氳嚜鍔ㄥ鐢ㄥ凡鏈夌殑 `OPENCODE_GO_API_KEY`銆?
-瀹樻柟璐﹀崟闇€瑕佷袱姝ワ紙涓€娆℃€э紝绾?2 鍒嗛挓锛夛細
+## 配置凭证（~/.dsh/.credentials.yaml）
+
+额度功能**零配置**：自动读取 `OPENCODE_GO_API_KEY`（环境变量或 `~/.dsh/.credentials.yaml`），
+或回退到 opencode CLI 的 `~/.local/share/opencode/auth.json`（用过 opencode CLI 登录即有）。
+
+官方账单需要两步（一次性，约 2 分钟）：
 
 ```yaml
-# 鈶?workspace id锛氭墦寮€ https://opencode.ai/workspace/ 鐢ㄩ噺椤碉紝
-#    鍦板潃鏍忛噷 wrk_ 寮€澶寸殑閭ｆ灏辨槸
+# ① workspace id：打开 https://opencode.ai/workspace/ 用量页，
+#    地址栏里 wrk_ 开头的那段就是
 OPENCODE_WORKSPACE_ID: 'wrk_01KZZVJ4HX6PR54FNAZJWXFWHX'
 
-# 鈶?鐧诲綍 cookie锛堢櫥褰?opencode.ai 鍚庯紝浠婚€変竴绉嶆柟寮忚幏鍙栵級锛?OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...; oc_locale=zh'
+# ② 登录 cookie（登录 opencode.ai 后获取，见下方方法）：
+OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...'
 ```
 
-### 鑾峰彇 cookie 鐨?3 绉嶆柟寮忥紙閮戒笉闇€瑕佹姄鍖?鎴浘锛?
-**鏂瑰紡 A锛堟渶绠€鍗曪紝鎺у埗鍙颁竴琛屽懡浠わ級**
-1. 娴忚鍣ㄧ櫥褰?https://opencode.ai/workspace/ 鐢ㄩ噺椤碉紝鎸?F12 鈫?Console
-2. 杈撳叆 `allow pasting` 鍥炶溅锛圕hrome 棣栨绮樿创鐨勫畨鍏ㄦ彁绀猴級
-3. 绮樿创 `copy(document.cookie)` 鍥炶溅 鈥斺€?鑷姩澶嶅埗鍒板壀璐存澘
-4. 绮樿创鍒板嚟璇佹枃浠跺嵆鍙?
-**鏂瑰紡 B锛圕ookie-Editor 鎻掍欢锛?*
-1. 娴忚鍣ㄨ Cookie-Editor 鎻掍欢锛岀櫥褰?opencode.ai 鍚庢墦寮€鎻掍欢
-2. 鐐?Copy锛堝鍒跺叏閮?cookie锛屾牸寮忓嵆 `auth=...; oc_locale=zh`锛?3. 绮樿创鍒板嚟璇佹枃浠?
-**鏂瑰紡 C锛團12 Application 闈㈡澘锛?*
-1. F12 鈫?Application 鈫?Cookies 鈫?opencode.ai
-2. 鎵惧埌 `auth`锛屽弻鍑?Value 鍏ㄩ€夊鍒?3. 鎷兼垚 `auth=<澶嶅埗鐨勫€?` 鍐欏叆鍑瘉鏂囦欢
+### 获取 cookie（auth 是 httpOnly，JS 读不到，务必用下面两种方式之一）
 
-> cookie 鏄櫥褰曚細璇濓紝**杩囨湡鍚庨噸鏂板鍒朵竴娆″嵆鍙?*锛堣处鍗曚細鏄剧ず"cookie 鍙兘宸茶繃鏈?鎻愮ず锛夈€?
-## 鎵嬪姩楠岃瘉瀹夸富鎺ュ彛
+**方式 1（推荐，F12 Application 面板）**
+1. 浏览器登录 https://opencode.ai/workspace/ 用量页，按 F12
+2. Application → Cookies → `https://opencode.ai` → 找到 `auth`
+3. 双击 Value 全选复制（Application 面板能看到 httpOnly cookie 的值）
+4. 拼成 `auth=<复制的值>` 写入凭证文件
+
+**方式 2（Cookie-Editor 扩展）**
+1. 浏览器装 Cookie-Editor 扩展，登录 opencode.ai 后打开扩展
+2. 点 Copy（复制全部 cookie），粘贴到凭证文件即可
+
+> ⚠️ 控制台 `copy(document.cookie)` **无效**：auth cookie 是 httpOnly，JS 无法读取。
+> cookie 是登录会话，**过期后重新复制一次即可**（账单会显示"cookie 可能已过期"提示）。
+
+## 手动验证宿主接口
 
 ```powershell
-# 棰濆害
+# 额度
 Invoke-RestMethod -Uri http://127.0.0.1:3080/dsh-opencode-quota/api/status -Headers @{ 'x-dsh-opencode-quota' = '1' }
-# 瀹樻柟璐﹀崟锛堟湰鏈堟寜鏃ッ楁ā鍨嬶級
+# 官方账单（本月按日×模型；?force=1 跳过缓存）
 Invoke-RestMethod -Uri http://127.0.0.1:3080/dsh-opencode-quota/api/official -Headers @{ 'x-dsh-opencode-quota' = '1' }
 ```
 
-## 鐩綍缁撴瀯
+## 目录结构
 
 ```
-lib/index.js    # 瀹夸富锛氶搴?/ 璐﹀崟 RPC / 璇诲嚟璇佸簱锛宬ey/cookie 涓嶅嚭鏈嶅姟鍣?lib/client.js   # 娴忚鍣ㄧ缁勪欢锛坰idebar.footer.action 鎻掓Ы锛?bin/            # modlens 鍖呰鍣紙鍙€夛紝璇嗗浘鐢ㄩ噺鏈湴璁板綍锛?cordis.patch.yml
+lib/index.js    # 宿主：额度 / 账单 RPC / 读凭证库，key/cookie 不出服务器
+lib/client.js   # 浏览器端组件（sidebar.footer.action 插槽）
+bin/            # modlens 包装器（可选，识图用量本地记录）
+cordis.patch.yml
 ```
 
-## 璇存槑
+## 说明
 
-- 瀹樻柟璐﹀崟璧?opencode 鎺у埗鍙扮殑鐧诲綍浼氳瘽璁よ瘉锛堝畼鏂归檺鍒讹紝API key 鏃犳硶璁块棶锛夛紝鎵€浠ュ繀椤婚厤缃?cookie锛涢搴︽帴鍙ｇ敤 API key锛屾棤闇€ cookie
-- 鎵€鏈夊嚟鎹彧鍦ㄥ涓讳晶浣跨敤锛岀粷涓嶄笅鍙戞祻瑙堝櫒
-- 鏃堕棿鏄剧ず涓烘湰鍦版椂鍖?24 鏃跺埗锛涜处鍗曟寜 +08:00 鏃跺尯鑱氬悎锛堜笌鎺у埗鍙伴〉闈竴鑷达級
+- 官方账单走 opencode 控制台的登录会话认证（官方限制，API key 无法访问），所以必须配置 cookie；额度接口用 API key，无需 cookie
+- 所有凭据只在宿主侧使用，绝不下发浏览器
+- 时间显示为本地时区 24 时制；账单按 +08:00 时区聚合（与控制台页面一致）
+- 账单 RPC 自动重试 3 次（抗网络抖动）；cookie 过期时返回明确提示
+
+## 许可
+
+MIT
