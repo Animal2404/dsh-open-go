@@ -1,6 +1,6 @@
-# ⚡ dsh-opencode-quota
+# ⚡ dsh-open-go
 
-OpenCode GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置按钮上方**（`sidebar.footer.action` 插槽）。
+Open GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置按钮上方**（`sidebar.footer.action` 插槽）。
 
 ## 功能
 
@@ -14,45 +14,58 @@ OpenCode GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设
 - **本月**：绿色块，按模型柱状条（top 4）
 - 金额来自官方控制台，精确到分
 
+**设置面板配置**（v0.6.0+）
+- 在 DSH 的「设置 → 插件 → opencode-quota」中直接填写 workspace id 和登录 cookie
+- cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
+
 **窄侧栏**（rail 模式）自动退化为小图标按钮。
 
 ## 安装
 
 ```sh
 # pnpm 9+ 需要 -w（workspace root）标志；dsh 转发器原样透传
-dsh plugin --profile web add -w https://github.com/Animal2404/dsh-opencode-quota
+dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
 
 # 若报 EPERM（profile 目录在工作区外被沙箱拦截），在允许写入 ~/.dsh 的权限下重试
 # 重启 dsh web 生效
 ```
 
-## 配置凭证（~/.dsh/.credentials.yaml）
+## 配置凭证
 
 额度功能**零配置**：自动读取 `OPENCODE_GO_API_KEY`（环境变量或 `~/.dsh/.credentials.yaml`），
 或回退到 opencode CLI 的 `~/.local/share/opencode/auth.json`（用过 opencode CLI 登录即有）。
 
-官方账单需要两步（一次性，约 2 分钟）：
+官方账单需要两步（一次性，约 2 分钟），**任选一种配置方式**：
+
+### 方式 1：设置面板（推荐，v0.6.0+）
+
+1. DSH Web → 设置 → 插件 → opencode-quota
+2. 填写：
+   - **workspaceId**：打开 https://opencode.ai/workspace/ 用量页，地址栏里 `wrk_` 开头的那段
+   - **consoleCookie**：登录 opencode.ai 后获取 cookie（见下方「获取 cookie」），填 `auth=...` 完整值
+3. 保存即生效（无需重启）
+
+### 方式 2：凭证文件（~/.dsh/.credentials.yaml）
 
 ```yaml
-# ① workspace id：打开 https://opencode.ai/workspace/ 用量页，
-#    地址栏里 wrk_ 开头的那段就是
+# ① workspace id：用量页 URL 里的 wrk_... 一段
 OPENCODE_WORKSPACE_ID: 'wrk_01KZZVJ4HX6PR54FNAZJWXFWHX'
 
-# ② 登录 cookie（登录 opencode.ai 后获取，见下方方法）：
+# ② 登录 cookie（登录 opencode.ai 后获取，见下方「获取 cookie」）
 OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...'
 ```
 
 ### 获取 cookie（auth 是 httpOnly，JS 读不到，务必用下面两种方式之一）
 
-**方式 1（推荐，F12 Application 面板）**
+**方式 A（推荐，F12 Application 面板）**
 1. 浏览器登录 https://opencode.ai/workspace/ 用量页，按 F12
 2. Application → Cookies → `https://opencode.ai` → 找到 `auth`
 3. 双击 Value 全选复制（Application 面板能看到 httpOnly cookie 的值）
-4. 拼成 `auth=<复制的值>` 写入凭证文件
+4. 拼成 `auth=<复制的值>` 填入设置面板或凭证文件
 
-**方式 2（Cookie-Editor 扩展）**
+**方式 B（Cookie-Editor 扩展）**
 1. 浏览器装 Cookie-Editor 扩展，登录 opencode.ai 后打开扩展
-2. 点 Copy（复制全部 cookie），粘贴到凭证文件即可
+2. 点 Copy（复制全部 cookie），粘贴到设置面板或凭证文件
 
 > ⚠️ 控制台 `copy(document.cookie)` **无效**：auth cookie 是 httpOnly，JS 无法读取。
 > cookie 是登录会话，**过期后重新复制一次即可**（账单会显示"cookie 可能已过期"提示）。
@@ -69,7 +82,7 @@ Invoke-RestMethod -Uri http://127.0.0.1:3080/dsh-opencode-quota/api/official -He
 ## 目录结构
 
 ```
-lib/index.js    # 宿主：额度 / 账单 RPC / 读凭证库，key/cookie 不出服务器
+lib/index.js    # 宿主：额度 / 账单 RPC / 设置面板注册，凭据不出服务器
 lib/client.js   # 浏览器端组件（sidebar.footer.action 插槽）
 bin/            # modlens 包装器（可选，识图用量本地记录）
 cordis.patch.yml
