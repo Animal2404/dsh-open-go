@@ -123,3 +123,57 @@ M package.json       ← 本次修复：description 恢复 + 新增 dependencies
 - ✅ 无其他文件损坏；
 - ⚠️ `lib/index.js` 与 `package.json` 的改动尚未 commit，`package-lock.json` 为新增文件；如确认无误建议尽快提交，避免再次出现工作区内容与版本库不一致导致的意外损坏；
 - ⚠️ 本次 JSON 损坏疑似由编辑器/脚本以错误编码覆盖保存引起，后续编辑该文件时注意保持 UTF-8 编码。
+
+---
+
+# 追加修复（同日 20:33）：silent-restart 插件 schema 报错
+
+## 故障现象
+
+再次运行 `dsh web` 崩溃，报错：
+
+```
+Error: dsh: plugin tree failed to load: failed to apply loader entry silent-restart
+(@dsh-external/dsh-silent-restart): unsupported JSON schema:
+schema.properties.ok.required is not supported on type "boolean";
+schema.properties.action.required is not supported on type "string";
+schema.properties.text.required is not supported on type "string"
+JsonSchemaError: ... code: 'UNSUPPORTED_SCHEMA'
+```
+
+## 根因
+
+`E:\DeepSeek\dsh-plugin-silent-restart\lib\index.js` 中注册 agent 工具 `dsh_silent_restart` 时，`output.schema` 写法错误：
+
+```js
+// 错误写法：required 被放在属性级别，JSON Schema 不允许对 boolean/string 原始类型声明 required
+properties: {
+  ok: { type: 'boolean', required: true },
+  action: { type: 'string', required: true },
+  text: { type: 'string', required: true },
+},
+```
+
+`dsh-tools` 的 `assertSupportedJsonSchema` 只接受 object 顶层 `required` 数组，属性级 `required` 一律拒绝（UNSUPPORTED_SCHEMA），导致插件树加载失败。
+
+## 修复
+
+改为对象顶层声明必需属性：
+
+```js
+properties: {
+  ok: { type: 'boolean' },
+  action: { type: 'string' },
+  text: { type: 'string' },
+},
+required: ['ok', 'action', 'text'],
+```
+
+并验证：`node --check` 语法通过；`dsh web --port 0` 正常启动（http://127.0.0.1:8173）。
+
+## 经验教训
+
+- dsh 插件工具 schema 的 `required` 必须写在对象顶层，不能写在具体属性上；
+- 该插件的 `parameters` 部分写法正确（顶层 `required: []`），仅 `output.schema` 存在此问题；
+- 两个插件仓库均非 git 仓库（dsh-plugin-silent-restart 无 .git），建议对本地插件也启用版本管理，便于回滚。
+
