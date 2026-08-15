@@ -75,20 +75,25 @@ OPENCODE_WORKSPACE_ID: 'wrk_01KZZVJ4HX6PR54FNAZJWXFWHX'
 OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...'
 ```
 
-### 获取 cookie（auth 是 httpOnly，JS 读不到，务必用下面两种方式之一）
+### 获取 cookie（auth 是 httpOnly，JS 读不到，务必用下面几种方式之一）
 
-**方式 A（推荐，F12 Application 面板）**
-1. 浏览器登录 https://opencode.ai/workspace/ 用量页，按 F12
-2. Application → Cookies → `https://opencode.ai` → 找到 `auth`
-3. 双击 Value 全选复制（Application 面板能看到 httpOnly cookie 的值）
-4. 拼成 `auth=<复制的值>` 填入设置面板或凭证文件
+**方式 A（推荐，F12 Network 面板）**
+1. 浏览器登录 https://opencode.ai/workspace/ 用量页，按 F12 打开 **Network（网络）** 面板
+2. **刷新页面**（F5），点开任意一个发往 opencode.ai 的请求
+3. 在 **Request Headers（请求标头）** 里找到 `cookie:` 行，复制 `auth=...` 这一整段（或整行 cookie 值）
+4. 填入设置面板或凭证文件
 
-**方式 B（Cookie-Editor 扩展）**
+**方式 B（F12 Application 面板）**
+1. 登录 opencode.ai 用量页，F12 → Application → Cookies → `https://opencode.ai`
+2. 找到 `auth`，双击 Value 全选复制
+3. 拼成 `auth=<复制的值>` 填入
+
+**方式 C（Cookie-Editor 扩展）**
 1. 浏览器装 Cookie-Editor 扩展，登录 opencode.ai 后打开扩展
 2. 点 Copy（复制全部 cookie），粘贴到设置面板或凭证文件
 
 > ⚠️ 控制台 `copy(document.cookie)` **无效**：auth cookie 是 httpOnly，JS 无法读取。
-> cookie 是登录会话，**过期后重新复制一次即可**（账单会显示"cookie 可能已过期"提示）。
+> 三种方式都能拿到 httpOnly cookie；cookie 是登录会话，**过期后重新复制一次即可**（账单会显示"cookie 可能已过期"提示）。
 
 ## 手动验证宿主接口
 
