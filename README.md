@@ -12,39 +12,51 @@ OpenCode GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设
 **官方账单**（opencode 控制台 getCosts RPC，非本地估算）
 - **今日**：蓝色块，按模型柱状条（模型名 + 占比% + 金额）
 - **本月**：绿色块，按模型柱状条（top 4）
-- 数据来自官方控制台月度成本接口，金额精确到分
+- 金额来自官方控制台，精确到分
 
-**其他**
-- 窄侧栏（rail 模式）退化为小图标按钮
-- key / cookie 只在宿主侧使用，绝不下发浏览器
+**窄侧栏**（rail 模式）自动退化为小图标按钮。
 
 ## 安装
 
 ```sh
-dsh plugin --profile web add <本仓库路径>
-# 或从 GitHub：
 dsh plugin --profile web add https://github.com/Animal2404/dsh-opencode-quota
 # 重启 dsh web 生效
 ```
 
-## 凭证配置
+## 配置凭证（~/.dsh/.credentials.yaml）
 
-在 `~/.dsh/.credentials.yaml`（或环境变量）中配置：
+额度功能**零配置**：自动复用已有的 `OPENCODE_GO_API_KEY`。
+
+官方账单需要两步（一次性，约 2 分钟）：
 
 ```yaml
-# OpenCode GO API key（额度接口）
-OPENCODE_GO_API_KEY: 'sk-...'
+# ① workspace id：打开 https://opencode.ai/workspace/ 用量页，
+#    地址栏里 wrk_ 开头的那段就是
+OPENCODE_WORKSPACE_ID: 'wrk_01KZZVJ4HX6PR54FNAZJWXFWHX'
 
-# opencode.ai 控制台登录 cookie（官方账单接口）
-# 登录 https://opencode.ai/workspace/<你的workspace>/usage 后，
-# 用 Cookie-Editor 等插件复制完整 cookie（auth=Fe26.2**...; oc_locale=zh）
+# ② 登录 cookie（登录 opencode.ai 后，任选一种方式获取）：
 OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...; oc_locale=zh'
-
-# opencode workspace id（控制台 URL 中的 wrk_...）
-OPENCODE_WORKSPACE_ID: 'wrk_...'
 ```
 
-> 账单接口需要 `OPENCODE_CONSOLE_COOKIE` + `OPENCODE_WORKSPACE_ID`；未配置时额度仍可用，账单显示获取失败。
+### 获取 cookie 的 3 种方式（都不需要抓包/截图）
+
+**方式 A（最简单，控制台一行命令）**
+1. 浏览器登录 https://opencode.ai/workspace/ 用量页，按 F12 → Console
+2. 输入 `allow pasting` 回车（Chrome 首次粘贴的安全提示）
+3. 粘贴 `copy(document.cookie)` 回车 —— 自动复制到剪贴板
+4. 粘贴到凭证文件即可
+
+**方式 B（Cookie-Editor 插件）**
+1. 浏览器装 Cookie-Editor 插件，登录 opencode.ai 后打开插件
+2. 点 Copy（复制全部 cookie，格式即 `auth=...; oc_locale=zh`）
+3. 粘贴到凭证文件
+
+**方式 C（F12 Application 面板）**
+1. F12 → Application → Cookies → opencode.ai
+2. 找到 `auth`，双击 Value 全选复制
+3. 拼成 `auth=<复制的值>` 写入凭证文件
+
+> cookie 是登录会话，**过期后重新复制一次即可**（账单会显示"cookie 可能已过期"提示）。
 
 ## 手动验证宿主接口
 
@@ -58,13 +70,14 @@ Invoke-RestMethod -Uri http://127.0.0.1:3080/dsh-opencode-quota/api/official -He
 ## 目录结构
 
 ```
-lib/index.js    # 宿主：额度 / 账单 RPC / 会话日志聚合，读凭证库
+lib/index.js    # 宿主：额度 / 账单 RPC / 读凭证库，key/cookie 不出服务器
 lib/client.js   # 浏览器端组件（sidebar.footer.action 插槽）
-bin/            # modlens 包装器（识图用量记录，可选）
+bin/            # modlens 包装器（可选，识图用量本地记录）
 cordis.patch.yml
 ```
 
-## 注意
+## 说明
 
-- 官方账单数据来自 opencode 控制台（`/console` 认证），cookie 过期后需重新复制
-- `bin/` 下是 modlens CLI 包装器，用于把识图（MiMo 2.5）用量记入本地，可选安装
+- 官方账单走 opencode 控制台的登录会话认证（官方限制，API key 无法访问），所以必须配置 cookie；额度接口用 API key，无需 cookie
+- 所有凭据只在宿主侧使用，绝不下发浏览器
+- 时间显示为本地时区 24 时制；账单按 +08:00 时区聚合（与控制台页面一致）

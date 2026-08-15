@@ -1,6 +1,6 @@
 {
   "name": "@dsh-external/dsh-opencode-quota",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "OpenCode GO 套餐额度小组件：侧边栏设置按钮上方显示滚动/周/月三档额度用量（百分比 + 24时制更新时间）+ 官方账单（今日/本月分块、各模型柱状条，getCosts RPC）。凭证 OPENCODE_CONSOLE_COOKIE + OPENCODE_WORKSPACE_ID。凭据不出服务器。",
   "private": true,
   "type": "module",
