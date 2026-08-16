@@ -59,6 +59,10 @@ dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
    - **consoleCookie**：登录 opencode.ai 后获取 cookie（见下方「获取 cookie」），填 `auth=...` 完整值
 3. 保存即生效（无需重启）
 
+> **cookie 格式（重要）**：账单接口吃的就是浏览器实际发送的那串——
+> `auth=Fe26.2**...; oc_locale=zh`
+> （`auth` 负责认证，`oc_locale=zh` 是浏览器同发的语言 cookie）。从 Network 面板复制 `cookie:` 请求头整行值即可，格式不用自己拼。
+
 > **Workspace ID 是干什么的？**
 > 它标识你在 opencode.ai 上的**哪个工作区**。一个账号下可能挂多个工作区（不同项目/组织），
 > 每个工作区的用量账单是**分开统计**的——官方账单接口（控制台 getCosts RPC）要靠这个 ID
@@ -72,7 +76,7 @@ dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
 OPENCODE_WORKSPACE_ID: 'wrk_01KZZVJ4HX6PR54FNAZJWXFWHX'
 
 # ② 登录 cookie（登录 opencode.ai 后获取，见下方「获取 cookie」）
-OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...'
+OPENCODE_CONSOLE_COOKIE: 'auth=Fe26.2**...; oc_locale=zh'
 ```
 
 ### 获取 cookie（auth 是 httpOnly，JS 读不到，务必用下面几种方式之一）
