@@ -177,3 +177,53 @@ required: ['ok', 'action', 'text'],
 - 该插件的 `parameters` 部分写法正确（顶层 `required: []`），仅 `output.schema` 存在此问题；
 - 两个插件仓库均非 git 仓库（dsh-plugin-silent-restart 无 .git），建议对本地插件也启用版本管理，便于回滚。
 
+---
+
+# 追加修复（8-16 20:17）：dsh-token-stats 客户端 boot 失败
+
+## 故障现象
+
+`dsh web` 服务端能启动（http://127.0.0.1:3080），但浏览器打开后页面顶部提示：
+
+```
+Failed to load plugins
+web boot: 1 entry did not activate dsh-token-stats: pending (waiting for services:
+@deepseek-ai/dsh-client-runtime, @deepseek-ai/dsh-client-ui-slots, @deepseek-ai/dsh-client-ui-conversation)
+```
+
+## 根因
+
+`C:\Users\axia\.dsh\plugins\dsh-token-stats\client.js` 中把 **npm 包全名** 当作客户端服务名声明：
+
+```js
+// 错误：客户端 shell 不提供这些“服务”，boot 一直等待导致 entry 无法激活
+exports.inject = [
+  '@deepseek-ai/dsh-client-runtime',
+  '@deepseek-ai/dsh-client-ui-slots',
+  '@deepseek-ai/dsh-client-ui-conversation',
+];
+```
+
+客户端 shell 实际提供的服务是短名（`slots`、`theme` 等）。正常插件（dsh-opencode-quota）用的是 `exports.inject = ['slots']`。
+
+## 修复
+
+```js
+exports.inject = ['slots'];
+```
+
+`slots` 是真实存在的客户端服务（`dsh-cordis-client-runner` 的 guardedSlots），且插件 `apply` 中确实使用 `ctx.slots.inject/register`，声明与实际使用一致。
+
+## 验证
+
+1. `dsh web --port 0` 服务端启动成功；
+2. 杀掉旧实例（PID 24332，加载的是修复前 client.js）后以默认端口 3080 重启（PID 29824）；
+3. 浏览器打开 http://127.0.0.1:3080：页面正常加载，**无** “Failed to load plugins”，模型选择/额度小组件等均正常。
+
+## 经验教训
+
+- 客户端插件 `exports.inject` 声明的是**运行时服务名**（短名，如 `slots`/`theme`），不是 npm 包名；
+- 修改 client 端代码后必须重启 dsh 服务（客户端 bundle 在启动时构建），仅刷新页面无效；
+- 端口 3080 被旧实例占用时 `dsh web` 会报 EADDRINUSE，先 `taskkill` 旧进程再启动。
+
+
