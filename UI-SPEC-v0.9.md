@@ -83,16 +83,28 @@
 - [ ] **任何主题下都不出现发白描边**（v0.9.4）：pill / 面板 / 弹窗 / GO 徽标都不画白线，边缘只靠深色内圈 + 投影
 - [ ] 键盘：Tab 到 pill 可开合、`Esc` 收起、开关可键盘切换
 
-## 8. 材质：磨砂亚克力（v0.9.4）
+## 8. 材质：亚克力（token 方案，v0.9.5 起）
 
-| 层 | 做法 | 值 |
-|---|---|---|
-| 底色 | 半透明（跟主题走） | `--oq-glass` = `light-dark(rgba(250,251,253,.72), rgba(30,30,35,.60))`；悬停 `--oq-glass-hi` 更亮一档 |
-| 模糊 | 背景模糊 + 提饱和（真"磨砂"） | `backdrop-filter: blur(20px) saturate(170%)`（弹窗 `blur(24px)`；`-webkit-` 前缀同时给） |
-| 颗粒 | 内联 SVG 噪声（`feTurbulence`）平铺，26% 不透明 | `--oq-noise`（120×120，`background-size:120px 120px`） |
-| 微光 | 顶部一道极淡的白色渐变（46% 处收干），不是线 | `linear-gradient(180deg, rgba(255,255,255,.06), transparent 46%)` |
-| 边缘 | **不画描边**：深色内圈 `inset 0 0 0 1px var(--oq-ring)` + 外投影抬升 | `--oq-ring` = `light-dark(rgba(0,0,0,.07), rgba(0,0,0,.26))`；投影 pill `0 8px 22px .34`、面板 `0 20px 50px .46`、弹窗 `0 26px 64px .56` |
-| 降级 | 不支持 `backdrop-filter` 时只剩半透明底 + 颗粒，依旧可读（截图 `08-panel-noblur.png` 实测） | — |
+**先查定义**：全仓 grep `acrylic|Acrylic|亚克力` **无命中** —— 项目没有给这个名字下定义；`磨砂/毛玻璃` 也不是 token，DSH 自己的模糊只出现在 Modal 遮罩的 `--dsw-mask-blur: blur(2px)`。
+所以按 `ui-theme` 的**材质词表**（`design-platform.css` 的 alias token + `gradient-shadow-text.css` 的 `--dsw-shadow-lv1..3`）与 `ui-primitives` 的**现成组件配方**（Modal / Button / Input）来实现，未新引入任何依赖，也没有自造色值。
+
+| 部位 | 取值（全部是项目 token，括号内为回退） |
+|---|---|
+| 收起态 pill / 窄栏 rail | 面 `--dsw-alias-button-elevated-fill`（与侧边栏「新会话」按钮同款）；悬停 `--dsw-alias-button-floating-hover`；按下 `--dsw-alias-interactive-bg-active`；抬升 `--dsw-shadow-lv1`（悬停 `--dsw-shadow-lv2`） |
+| 展开面板 | 面 `--dsw-specific-menu`（= `--dsw-alias-bg-layer-3`，菜单/浮层专用 token）；抬升 `--dsw-shadow-lv3` |
+| ⚙ 弹窗 | 面 `--dsw-alias-bg-layer-2`（Modal 的卡片配方）；抬升 `--dsw-shadow-lv3`；遮罩 `--dsw-alias-bg-mask-1`（Modal 的 mask token，**不带** 那道 blur(2px)） |
+| 面板内层卡片 | 面 `--dsw-alias-interactive-bg-hover`（两主题下都成立的浅填充） |
+| `GO` 徽标 / 开关轨道（关） | 面 `--dsw-alias-interactive-bg-active` |
+| 开关轨道（开）/ 焦点环 | `--dsw-alias-brand-primary-new-colorprimary-new-color`（设计批准的品牌蓝） |
+| 输入框 | 抄 `ui-primitives/Input`：`border: 1px solid --dsw-alias-border-l2` + 面 `--dsw-alias-bg-layer-1`，聚焦 `border-color: --dsw-alias-brand-primary` |
+| 按钮 | 抄 `ui-primitives/Button`：取消 = ghost（透明 + `--dsw-alias-interactive-bg-hover`）；保存 = `--dsw-alias-button-ghost-active-fill`（中性实心，悬停 `--dsw-alias-button-ghost-active-hover`） |
+| 三档条 / 明细条 / 警示 | 蓝 = 品牌蓝；绿 = `--dsw-alias-state-success-primary`；琥珀 = `--dsw-alias-state-warn-primary`；警示红 = `--dsw-alias-state-error-primary` |
+| 账单卡 | 今日 = `--dsw-alias-state-business-tertiary` / 描边 `…-business-primary`；本月 = `--dsw-alias-state-success-tertiary` / `…-success-primary` |
+| 边缘 | **不画白描边**（沿用 v0.9.4 的用户要求）：深色侧不描边；浅色侧那条分界线用 `light-dark(var(--dsw-alias-border-l2), transparent)` —— 只在浅色主题出现、且是深色细边 |
+
+**下线清单（磨砂相关，全部移除，探针复核 `frostedLeftovers: 0`）**：`backdrop-filter`（原 20px/24px 两处）、内联 SVG `feTurbulence` 噪点贴图、`--oq-glass/--oq-glass-hi/--oq-ring/--oq-noise` 四个自造变量、以及所有自造 alpha 的面/叠加层（`rgba(...)` 现在只作为 `var()` 的回退值存在）。
+
+**没动的**：布局、内外边距、圆角（pill 10 / rail 11 / 面板 14 / 弹窗 14 / 卡片 10）、点击区域、字号、三档行的几何、动效时长与曲线 —— 只换材质表现。
 
 **坑（记一笔）**：`<button>` 有浏览器默认 `border: 2px outset ButtonBorder`（渲染出来就是一圈发白的 3D 边）。v0.9.4 把自绘的 `border` 删掉换成内圈后，这条默认边**冒出来了** —— 截图里那圈白线就是它。修法：`border:0` 显式兜底（pill / rail / 图标 / 开关 / 输入框 / 按钮全部显式声明）。
 
@@ -102,3 +114,4 @@
 - **v0.9.2**（2026-09-13）：按用户反馈**把收起态箭头掉了个头** —— 收起 `▾`、展开 `▴`（原实现是收起 `▴`/展开 `▾`，与参考图展开态 `^` 相反）。实现只改一处：旋转条件从 `--open` 改成 `--closed`（基础形状本身是朝上的 chevron）。探测新增 `chev`：收起 `matrix(-1,0,0,-1,0,0)`（=180°）、展开 `none`。
 - **v0.9.3**（2026-09-13）：按用户反馈「点开太慢、要先展开再刷新」修开合时序。三处改动：① 定位不再等面板高度（只量 pill + `bottom` 锚定）；② `render = open || closing`，展开与挂载同一帧；③ 刷新改到**上屏后下一帧**才发；④ 数据已在手上时展开直接显示真值。实测「点击 → 可见」**367 → 19ms**，刷新请求起点 +24ms（在可见 +19ms 之后）。
 - **v0.9.4**（2026-09-13）：按用户反馈「不要白色描边、要磨砂亚克力」换材质。① 材质换成 §8 那套（半透明 + `backdrop-filter` 模糊 + 噪声颗粒 + 顶部微光）；② 所有描边换成深色内圈（pill / rail / 面板 / 卡片 / GO 徽标 / 弹窗 / 开关 / 输入框 / 按钮）；③ 修掉被放出来的浏览器默认按钮白边（`<button>` 的 `2px outset`）—— 这才是那圈白线的真身。弹窗与面板都验证过计算样式 `border: 0px none`。
+- **v0.9.5**（2026-09-13）：按用户要求**把磨砂质全部换成亚克力**（模糊/噪点/半透明叠加一律下线，见 §8）。① 面改走 `button-elevated-fill` / `specific-menu` / `bg-layer-2`，抬升改走 `shadow-lv1/2/3`，交互改走 `interactive-bg-*`，遮罩改走 `bg-mask-1`；② 输入框/按钮直接抄 `ui-primitives` 的 Input/Button 配方；③ 色值收敛到 `--dsw-alias-*`（三档条、警示、账单卡），`rgba()/hex` 只剩 `var()` 回退；④ 弹窗不再用「固定深色」硬编码，改成跟主题 token 走（当年那个白底 bug 的真因是「浅色面 + 固定浅色文字」不匹配，同源 token 不会再有这个问题）。探针：`backdrop: none`、`bgImage: none`、`frostedLeftovers: 0`、pill `rgb(67,69,74)`、面板 `rgb(53,54,56)`；布局/圆角/点击区域与 v0.9.4 一致（pill 高 31 → 29px，因为不再有 1px 描边参与盒模型）。

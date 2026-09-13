@@ -287,7 +287,9 @@ async function main() {
   await cdp.send('Page.navigate', { url: BASE + '/' }, sessionId)
   await cdp.until((e) => e.method === 'Page.loadEventFired', 30_000, 'page load')
   await untilJs(cdp, sessionId, `Boolean(document.querySelector('.dshoq-pill') || document.querySelector('.dshoq-rail'))`, 40_000, 'Open GO 组件挂载')
-  await sleep(1500)
+  // 等额度真值到达再截图：否则截到的是加载态（`–`），看不到数字/进度条在材质上的可读性
+  await untilJs(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); return Boolean(p && /%/.test(p.textContent || '')) })()`, 40_000, '额度数据到达')
+  await sleep(800)
 
   // ── 0. 宿主下发的 bundle 是不是本次改过的？──
   const bundle = await evaluate(cdp, sessionId, `
@@ -328,11 +330,23 @@ async function main() {
 
   // ── 2b. 材质探针：算样式 + 静态父链；再临时关掉 backdrop-filter 看边缘光晕是否消失 ──
   console.log('材质探针:', JSON.stringify(await evaluate(cdp, sessionId, `(() => {
-    const cs = (el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, bgImage: (s.backgroundImage || '').slice(0, 70), border: s.borderTopWidth + ' ' + s.borderTopStyle + ' ' + s.borderTopColor, shadow: s.boxShadow, backdrop: (s.backdropFilter || s.webkitBackdropFilter || 'none'), radius: s.borderRadius } }
+    const cs = (el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, bgImage: (s.backgroundImage || '').slice(0, 70), border: s.borderTopWidth + ' ' + s.borderTopStyle + ' ' + s.borderTopColor, shadow: s.boxShadow, backdrop: (s.backdropFilter || s.webkitBackdropFilter || 'none'), radius: s.borderRadius, color: s.color } }
     const chain = (el) => { const out = []; let n = el; for (let i = 0; i < 4 && n; i++, n = n.parentElement) { const s = getComputedStyle(n); out.push({ tag: n.tagName, cls: String(n.className).slice(0, 46), border: s.borderTopWidth + ' ' + s.borderTopColor, bg: s.backgroundColor }) } return out }
     const p = document.querySelector('.dshoq-panel')
     const pill = document.querySelector('.dshoq-pill')
-    return { panel: p ? cs(p) : null, pill: pill ? cs(pill) : null, pillChain: pill ? chain(pill) : null, panelParent: p ? String(p.parentElement.tagName) : null }
+    const card = document.querySelector('.dshoq-card')
+    const badge = document.querySelector('.dshoq-badge')
+    const back = document.querySelector('.dshoq-backdrop')
+    return {
+      panel: p ? cs(p) : null,
+      pill: pill ? cs(pill) : null,
+      card: card ? cs(card) : null,
+      badge: badge ? cs(badge) : null,
+      backdrop: back ? cs(back) : null,
+      pillChain: pill ? chain(pill) : null,
+      panelParent: p ? String(p.parentElement.tagName) : null,
+      frostedLeftovers: [...document.querySelectorAll('.dshoq-scope *')].filter((el) => { const s = getComputedStyle(el); return (s.backdropFilter && s.backdropFilter !== 'none') || /feTurbulence/.test(s.backgroundImage || '') }).length,
+    }
   })()`)))
   await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-panel'); if (p) p.style.backdropFilter = 'none'; return true })()`)
   await sleep(250)

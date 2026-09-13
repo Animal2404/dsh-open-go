@@ -133,3 +133,50 @@ README 里的 `assets/screenshot-*.png` 已同步替换成本轮截图（同一�
 | 其余探针 | 面板 280×201、溢出 0、三档行 3、账单默认 0 卡 / 开启 2 卡、点击 → 可见 19ms、reduced-motion 动画数 0 —— 全部不变 |
 
 截图目检：`shots/01-pill.png`（磨砂颗粒、无白线）、`shots/02b-panel-only.png`（内容透出且模糊）、`shots/03-settings-off.png`（弹窗同材质）、`shots/01b-window.png`（侧边栏里的整体观感）。
+
+---
+
+## 附：v0.9.5 追补（2026-09-13 08:38）· 磨砂 → 亚克力
+
+**用户要求**：把界面/组件里"磨砂质感（毛玻璃、模糊透明效果）"的地方**全部**换成亚克力（Acrylic）；不要保留磨砂；按项目现有材质/主题方案实现、复用既有变量与规范、不加依赖；布局/尺寸/层级/圆角/点击区域/可读性不变；不要自造色值与参数。
+
+**第一步是查定义（不是猜）**：
+- 全仓 grep `acrylic|Acrylic|亚克力` → **零命中**（项目没有给这个名字下定义）；
+- `磨砂/毛玻璃` 也不是 token；DSH 自身的"磨砂"只有 `--dsw-mask-blur: blur(2px)`（Modal/设置根/灯箱三处遮罩用）；
+- 于是取项目**现成的材质词表**：`design-platform.css`（`--dsw-alias-bg-layer-1/2/3`、`--dsw-alias-button-elevated-fill`、`--dsw-alias-button-floating-hover`、`--dsw-alias-interactive-bg-hover/active`、`--dsw-alias-bg-mask-1`、`--dsw-alias-border-l2`、`--dsw-alias-brand-primary*`、`--dsw-alias-state-*`）与 `gradient-shadow-text.css`（`--dsw-shadow-lv1/lv2/lv3`）；
+- 并**直接复用组件配方**：`ui-primitives/Modal.module.css`（卡片 = layer-2 + border-inverted + shadow-lv3；遮罩 = mask-1）、`Button.module.css`（ghost / ghost-active）、`Input.module.css`（border-l2 + layer-1 + 品牌蓝聚焦）、`ui-sidebar/SidebarRoot.module.css`（同 slot 的「新会话」= border-l2 + button-elevated-fill）。
+
+**替换清单（逐一，探针复核 `frostedLeftovers: 0`）**
+
+| 原磨砂实现 | 处数 | 现在 |
+|---|---|---|
+| `backdrop-filter: blur(20px) saturate(170%)` | pill / rail / 面板 | 删除（面走 `button-elevated-fill` / `specific-menu`） |
+| `backdrop-filter: blur(24px) saturate(160%)` | ⚙ 弹窗 | 删除（面走 `bg-layer-2`） |
+| 内联 SVG `feTurbulence` 噪点贴图 | 全部面 | 删除 |
+| `--oq-glass` / `--oq-glass-hi` / `--oq-ring` / `--oq-noise` | 4 个自造变量 | 删除，改语义 token 变量 |
+| 自造 alpha 面/叠加层（`rgba(255,255,255,.05/.06/.10/.14)` 等） | pill hover、按钮、开关、输入框、switch-row、徽标、卡片 | 改 `interactive-bg-hover/active`、`button-*-fill`、`button-ghost-active-fill`、`bg-layer-1` |
+| 自造投影（`0 8px 22px rgba(0,0,0,.34)` 等 6 处） | pill / rail / 面板 / 弹窗 | 改 `--dsw-shadow-lv1/lv2/lv3` |
+| 遮罩 `rgba(0,0,0,.55)` | 弹窗 | 改 `--dsw-alias-bg-mask-1` |
+| 字面色（`#4d6bfe` `#10b981` `#f59e0b` `#f87171` `#8b5cf6` `#fbbf24` 等） | 三档条、警示、账单卡、聚焦环、成功文案 | 收敛到 `--dsw-alias-state-*` / 品牌蓝 / 三级面 token |
+
+**探针复核（`node .verify/sidebar-check.mjs` → exit 0）**
+
+| 项 | 值 |
+|---|---|
+| `frostedLeftovers`（插件内仍带 backdrop-filter 或 feTurbulence 的元素数） | **0** |
+| pill / 面板 `backdrop` | `none` / `none` |
+| pill / 面板 `backgroundImage` | `none` / `none`（噪点贴图已无） |
+| pill / 面板 `border` | `0px none` / `0px none`（沿用用户"不要白色描边"的要求） |
+| pill / 面板 面色 | `rgb(67,69,74)`（bluish-750）/ `rgb(53,54,56)`（bluish-800） |
+| 卡片 / 徽标 | `rgba(255,255,255,0.08)` / `rgba(255,255,255,0.14)`（interactive 填充） |
+| 可读性 | 截图 `02b-panel-only.png` / `05b-panel-billing-only.png`：10% / 22% / 2% 与账单数字清晰 |
+| 未退化 | 面板 280×201（账单开 429）、溢出 0、点击→可见 19ms、reduced-motion 动画数 0、收起卸载 |
+
+**没动的**：布局、内边距、圆角（pill 10 / rail 11 / 面板 14 / 弹窗 14 / 卡片 10）、点击区域、字号、三档行几何、动效时长与曲线。唯一 2px 差异：pill 高 31 → 29px，因为不再有 1px 描边参与盒模型。
+
+**三处需用户知晓的判断**（一票可翻）：
+1. 账单卡从"自造紫/绿半透明"改成设计系统 `state-business-tertiary` / `state-success-tertiary` 的实色三级面（今日 → 品牌蓝），描边用对应 `…-primary`；系统里没有紫色 token，这是"最接近的语义 token"。
+2. 弹窗不再硬编码固定深色：面与文字都跟 token 走（当年白底 bug 的真因是"浅色面 + 固定浅色文字"不匹配，同源 token 不会再有这个问题）。
+3. 三档条蓝从 `#4d6bfe` 收敛到项目品牌蓝 `rgb(65,118,230)`（深色侧 `deepseek-450`），色相有极小位移。
+
+**性能**：删掉 blur/噪点后不再有每帧背景采样与额外合成层，低配机器只会更轻（本轮未做帧率 A/B，如需可补）。

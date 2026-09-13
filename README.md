@@ -23,8 +23,9 @@ Open GO 套餐额度小组件，挂在 DSH Web 侧边栏**设置按钮上方**�
 - 在 DSH 的「设置 → 插件 → opencode-quota」里也能填这两项；cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
 
 **材质**
-- **磨砂亚克力**：半透明底 + 背景模糊（`backdrop-filter: blur(20px) saturate(1.7)`）+ 细颗粒噪点 + 顶部一道极淡微光；**不画描边**，边缘靠深色内圈与投影交代（任何主题下都不会出现发白的细线）
-- 收起态、展开面板、窄栏图标、⚙ 弹窗都是同一套材质；不支持 `backdrop-filter` 时退化为纯半透明，依旧可读
+- **亚克力**（Acrylic）：面 / 抬升 / 交互全部取 DSH 的语义 token —— pill 用 `--dsw-alias-button-elevated-fill`（与侧边栏「新会话」同款）、面板用 `--dsw-specific-menu`、弹窗用 `--dsw-alias-bg-layer-2`、抬升用 `--dsw-shadow-lv1/2/3`、遮罩用 `--dsw-alias-bg-mask-1`；输入框与按钮直接沿用 `ui-primitives` 的 Input/Button 配方
+- **没有模糊、没有噪点、没有自造半透明**（磨砂玻璃那套已下线）：不依赖 `backdrop-filter`，旧浏览器/低配机器上也不掉帧；`rgba()/hex` 只作为 `var()` 的回退值存在
+- **不画白描边**：深色侧靠面比底亮分界，浅色侧用 `light-dark(var(--dsw-alias-border-l2), transparent)` 给一条深色细边
 
 **手感/可达性**
 - **点开就是立刻展开**：面板当帧上屏（实测 19ms），刷新请求在展开之后才发，绝不挡开合

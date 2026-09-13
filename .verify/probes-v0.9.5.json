@@ -1,0 +1,46 @@
+{
+  "widget": "dsh-opencode-quota v0.9.5",
+  "verified_at": "2026-09-13T08:38+08:00",
+  "task": "把磨砂质（毛玻璃/模糊透明/噪点）全部换成亚克力材质",
+  "definition_source": "全仓 grep acrylic|Acrylic|亚克力 无命中 → 按 ui-theme 的材质 token（design-platform.css / gradient-shadow-text.css 的 --dsw-shadow-lv*）+ ui-primitives 的 Modal/Button/Input 配方实现；未新增依赖，未自造色值",
+  "removed_frosted": {
+    "backdrop-filter": "2 处（pill/rail/panel 的 blur(20px) saturate(170%)、dialog 的 blur(24px)）→ 全部删除",
+    "noise_texture": "内联 SVG feTurbulence 噪点贴图 → 删除",
+    "invented_vars": "--oq-glass / --oq-glass-hi / --oq-ring / --oq-noise 四个自造变量 → 删除",
+    "translucent_overlays": "所有自造 alpha 面（rgba 面/叠加层）→ 改为语义 token；rgba/hex 现仅存在于 var() 回退"
+  },
+  "material_now": {
+    "pill_rail": "background: var(--dsw-alias-button-elevated-fill) / hover var(--dsw-alias-button-floating-hover) / active var(--dsw-alias-interactive-bg-active)；box-shadow: var(--dsw-shadow-lv1)（hover lv2）",
+    "panel": "background: var(--dsw-specific-menu)（=bg-layer-3）；box-shadow: var(--dsw-shadow-lv3)",
+    "dialog": "background: var(--dsw-alias-bg-layer-2)（Modal 配方）；box-shadow: var(--dsw-shadow-lv3)；mask: var(--dsw-alias-bg-mask-1)",
+    "card": "background: var(--dsw-alias-interactive-bg-hover)",
+    "badge_switch_track": "background: var(--dsw-alias-interactive-bg-active)",
+    "accent": "var(--dsw-alias-brand-primary-new-colorprimary-new-color)（开关开 + 焦点环）",
+    "input": "border 1px var(--dsw-alias-border-l2) + bg var(--dsw-alias-bg-layer-1) + focus 品牌蓝（抄 Input）",
+    "buttons": "取消=ghost（interactive-bg-hover）；保存=var(--dsw-alias-button-ghost-active-fill)（抄 Button ghost-active）",
+    "edge": "不画白描边：深色侧无描边；浅色侧 light-dark(var(--dsw-alias-border-l2), transparent)"
+  },
+  "probes": {
+    "panel": { "bg": "rgb(53, 54, 56)", "bgImage": "none", "border": "0px none", "backdrop": "none", "radius": "14px", "shadow": "lv3（0 0 1px rgba(0,0,0,.2), 0 12px 32px rgba(0,0,0,.08)）" },
+    "pill": { "bg": "rgb(67, 69, 74)", "bgImage": "none", "border": "0px none", "backdrop": "none", "radius": "10px", "shadow": "lv1（0 2px 4px rgba(0,0,0,.05)）" },
+    "card": { "bg": "rgba(255, 255, 255, 0.08)" },
+    "badge": { "bg": "rgba(255, 255, 255, 0.14)" },
+    "frostedLeftovers": 0,
+    "pillW": 256,
+    "pillH": 29,
+    "panelW": 280,
+    "panelH": 201,
+    "panelHWithBilling": 429,
+    "panelOverflowX": 0,
+    "panelOverflowY": 0,
+    "tierRows": 3,
+    "billingCardsDefault": 0,
+    "billingCardsOn": 2,
+    "dialogW": 340,
+    "reducedMotionAnimations": 0,
+    "visibleAfterClickMs": 19
+  },
+  "numeric_summary": "frostedLeftovers=0, backdropFilterCount=0, noiseTextureCount=0, panelBorderPx=0, pillBorderPx=0, pillH=29, panelH=201, panelOverflowX=0, panelOverflowY=0, visibleAfterClickMs=19, reducedMotionAnimations=0",
+  "unchanged": "布局 / 内边距 / 圆角（pill10 rail11 面板14 弹窗14 卡片10）/ 点击区域 / 字号 / 三档行几何 / 动效时长与曲线",
+  "flagged_decisions": "① 账单卡由自造紫/绿半透明改为设计系统 state-business / state-success 的 tertiary 面（今日因此从紫转品牌蓝）；② 弹窗不再固定深色，改跟 token（原白底 bug 的真因是浅色面 + 固定浅色文字不匹配）；③ 三档条/警示色收敛到 alias token（色相微调，如蓝 #4d6bfe → 品牌蓝 rgb(65,118,230)）"
+}
