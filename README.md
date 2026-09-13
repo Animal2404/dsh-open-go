@@ -70,7 +70,15 @@ dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
 额度功能**零配置**：自动读取 `OPENCODE_GO_API_KEY`（环境变量或 `~/.dsh/.credentials.yaml`），
 或回退到 opencode CLI 的 `~/.local/share/opencode/auth.json`（用过 opencode CLI 登录即有）。
 
-官方账单需要两步（一次性，约 2 分钟），**任选一种配置方式**：
+官方账单需要两步（一次性，约 2 分钟）。**两个入口改的是同一份配置**（v0.9.7 起彻底同源）：
+
+| 入口 | 位置 | 能改什么 |
+|---|---|---|
+| ⚙ 齿轮弹窗 | 面板标题栏右侧的齿轮 | 账单显示开关、workspaceId、consoleCookie |
+| 设置面板 | 设置 → 插件 → opencode-quota | 同上三项（同一份 schema） |
+
+> **同源说明**：齿轮保存会**同时**写回设置存储（`~/.dsh/settings.yaml` 的 `opencode-quota` 段）与凭证文件（`~/.dsh/.credentials.yaml`，作为无设置服务时的兜底）；
+> 反方向，设置面板里的改动会通过 `settings.watch` 立即生效。因此两边不会再出现"一个显示已配置、另一个还是空的"。账单开关默认 **关**。
 
 ### 方式 1：设置面板（推荐，当前版本已内置）
 
@@ -78,7 +86,10 @@ dsh plugin --profile web add -w https://github.com/Animal2404/dsh-open-go
 2. 填写：
    - **workspaceId**：打开 https://opencode.ai/workspace/ 用量页，地址栏里 `wrk_` 开头的那段
    - **consoleCookie**：登录 opencode.ai 后获取 cookie（见下方「获取 cookie」），填 `auth=...` 完整值
+   - **billing**：是否在面板里显示「今日 / 本月」消耗
 3. 保存即生效（无需重启）
+
+> 也可以直接在面板右上角 **⚙** 里改这三项：改动会立刻写回上面这份设置存储，两边显示始终一致。
 
 > **cookie 格式（重要）**：账单接口吃的就是浏览器实际发送的那串——
 > `auth=Fe26.2**...; oc_locale=zh`

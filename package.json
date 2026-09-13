@@ -1,7 +1,7 @@
 {
   "name": "@dsh-external/dsh-opencode-quota",
-  "version": "0.9.6",
-  "description": "Open GO 套餐额度小组件：收起为单行 pill（GO + 5h/wk/mo 三档读数），点击在 pill 上方就地展开锚定面板（5h 滚动 / 7d 每周 / 1m 每月三档额度条 + 距重置倒计时）；官方账单默认隐藏，由 ⚙ 弹窗里的开关打开（今日 / 本月按模型明细，打开才请求控制台接口）；⚙ 同时配置 workspace id 与登录 cookie，一键刷新全部，开合与开关状态持久化。凭据不出服务器。",
+  "version": "0.9.7",
+  "description": "Open GO 套餐额度小组件：收起为单行 pill（GO + 5h/wk/mo 三档读数），点击在 pill 上方就地展开锚定面板（5h 滚动 / 7d 每周 / 1m 每月三档额度条 + 距重置倒计时）；官方账单默认隐藏，由 ⚙ 弹窗里的开关打开（今日 / 本月按模型明细，打开才请求控制台接口）；⚙ 齿轮弹窗与「设置 → 插件 → opencode-quota」共用同一份配置（账单开关 / workspace id / 登录 cookie），齿轮保存会写回设置存储，一键刷新全部，开合状态持久化。凭据不出服务器。",
   "private": true,
   "type": "module",
   "main": "lib/index.js",

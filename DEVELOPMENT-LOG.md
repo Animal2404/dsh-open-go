@@ -213,3 +213,26 @@ lib/index.js L827-832:
 **踩坑（本轮最值钱的一条）**
 - **祖先的 `transform` 会抢走 `position:fixed` 子元素的定位**：面板为了进场动效加了 `animation` + `transform-origin` → 留在面板里的 ⚙ 弹窗（`position:fixed; inset:0`）被面板接管包含块，宽度 340 被压成 278，还被 `overflow-y:auto` 裁掉半截、跟着面板滚动。首轮截图一眼看到（探针同时给出 `parent: dshoq-scope dshoq-backdrop`、`w: 278`）。
 - 修法：弹窗改成独立 `ReactDOM.createPortal(document.body)`；「点外收起」判断补 `dlgRef` 放行（否则点弹窗会把面板一起关掉）；面板收起时同时 `setCfgOpen(false)`，不留孤儿浮层。
+
+## 九、v0.9.7：齿轮设置与设置面板同源（两个配置面必须共用一份真相）
+
+**背景**：同一个插件的配置有两个入口 —— 面板右上角 ⚙ 弹窗，和「设置 → 插件 → opencode-quota」（由 `ctx.settings.register` 渲染）。
+改之前它们**各写各的**：齿轮把值写进 `~/.dsh/.credentials.yaml` + 内存副本，设置面板读的是设置存储（`~/.dsh/settings.yaml`）。
+取证方式：读两个文件 + 打一次 `GET /api/config` —— 设置存储里根本没有 `opencode-quota` 段，而凭证文件有值，
+所以"齿轮显示已配置、设置面板一片空白"是必然结果；更糟的是 `source` 字段还会谎报 `settings`。
+
+**修法**：配置项一律以**设置存储**为准。齿轮保存时 `settingsScope.update({...})` 写回设置存储，
+凭证文件降级为"设置服务不可用时"的兜底；账单开关也进 schema（`billing`，默认 `false`），两端字段集从此一致。
+
+**踩坑（三条，都比结论值钱）**
+- **`SettingsScope` 没有 `writable` 字段**：`writable` 在**服务**上（`ctx.settings.writable`）。写 `if (!scope.writable) return`
+  会把 undefined 当 false → 写回路径被自己的判断静默短路（现象：代码"跑了"但文件永远不变）。**教训：读 API 前先看 d.ts 的接口面**，
+  这次是 `@deepseek-ai/dsh-settings/lib/types/index.d.ts` 的 `SettingsScope` 定义把字段列得清清楚楚。
+- **热重载会把 loader entry 弄丢**：`dev_reload_package` 对宿主侧插件报 `activeEntry=none`，重载后 entry 变 `[failed]`，
+  再重载也救不回来（路由还是旧实例在应答，容易误判"改动已生效"）。**教训：宿主侧改动别指望热重载**；
+  先用 `node --input-type=module -e "import('file:///…/lib/index.js')"` 证明模块本身能加载，再走一次干净重启。
+- **验证脚本要先确认前置状态**：齿轮探针第一版失败，是因为它在"弹窗已关闭"的步骤里找 `.dshoq-switch`（拿到 null）。
+  探针要显式打开弹窗、并在结尾复原状态（开关交回 false、cookie 不回填），否则会给用户留下测试态。
+
+**证据**：`.verify/GEAR-SETTINGS-INVENTORY.md`（26 处清单 + 逐项决策）、`.verify/gear-run.log`（全流程探针原文）、
+`settings.yaml` 与备份的 diff（只多出 `opencode-quota:` 段）、凭证文件 cookie 行未变。

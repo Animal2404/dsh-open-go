@@ -1,0 +1,117 @@
+{
+  "widget": "dsh-opencode-quota v0.9.7",
+  "verified_at": "2026-09-13T09:2x+08:00",
+  "task": "相位 1-3：把泛白（白叠加当面用）修正为图 2 所体现的 dsh 配色；只改配色，不动布局",
+  "phase1_sources": {
+    "authority": "ui-theme/src/styles/design-platform.css（静态色阶 L53-71/L129-147 + 深色语义别名 L249-331），阴影见 gradient-shadow-text.css L5-11；全仓唯一来源，无冲突",
+    "dark_palette": {
+      "bg_base": "rgb(21,21,23) bluish-950",
+      "sidebar_fill": "rgb(27,27,28) bluish-900",
+      "bg_layer_1": "rgb(35,35,36) bluish-875",
+      "bg_layer_2": "rgb(44,44,46) bluish-850",
+      "bg_layer_3": "rgb(53,54,56) bluish-800",
+      "button_elevated_fill": "rgb(67,69,74) bluish-750",
+      "interactive_bg_hover": "rgba(255,255,255,.08)",
+      "interactive_bg_active": "rgba(255,255,255,.14)",
+      "border_l2": "rgba(255,255,255,.12)"
+    },
+    "root_cause": "dsh 深色侧自带白色叠加 token（hover/active/border-l2），其设计用途是‘状态叠加/描边’而非‘面’；把这类 token 当面用就会泛白"
+  },
+  "phase2_changes": {
+    "lib/client.js L129": "--oq-chip: interactive-bg-active(白14%) → interactive-bg-hover(白8%)；--oq-acrylic: button-elevated-fill(bluish-750) → button-floating-fill(bluish-850)；删除 --oq-card；新增 --oq-bar-track(白8%)",
+    "lib/client.js L175": ".dshoq-card 移除 background（不再画面，保留 padding 8 / radius 10 / gap 8）",
+    "lib/client.js L181": ".dshoq-bar 轨道 var(--oq-track)(白12%) → var(--oq-bar-track)(白8%)",
+    "lib/client.js L201": ".dshoq-mbar 轨道同上",
+    "not_touched": ".dshoq-panel 面（本来就 = bluish-800 = 图2 面板色）"
+  },
+  "key_values": {
+    "panel_bg": {
+      "before": "rgb(53,54,56)",
+      "after": "rgb(53,54,56)",
+      "fig2": "rgb(53,54,56)"
+    },
+    "card_bg": {
+      "before": "rgba(255,255,255,0.08)",
+      "after": "rgba(0,0,0,0)",
+      "fig2": "无卡片"
+    },
+    "pill_bg": {
+      "before": "rgb(67,69,74)",
+      "after": "rgb(44,44,46)",
+      "fig2": "rgb(44,44,46)"
+    },
+    "badge_bg": {
+      "before": "rgba(255,255,255,0.14)",
+      "after": "rgba(255,255,255,0.08)",
+      "fig2": "≈ rgb(62,62,62)"
+    },
+    "bar_track": {
+      "before": "rgba(255,255,255,0.12)",
+      "after": "rgba(255,255,255,0.08)",
+      "fig2": "rgb(69,70,72)"
+    }
+  },
+  "pixel_hits_pct": {
+    "bluish800_53_54_56": {
+      "fig2": 64.01,
+      "user_current_ui": 25.01,
+      "before_fix": 28.11,
+      "after_fix": 85.0
+    },
+    "white8_69_70_72": {
+      "fig2": 2.58,
+      "user_current_ui": 50.62,
+      "before_fix": 56.85,
+      "after_fix": 3.52
+    }
+  },
+  "controlled_ab": {
+    "method": "git stash push lib/client.js → 渲染量测 → stash pop → 再量测",
+    "offsetHeight_before": 197,
+    "offsetHeight_after": 197,
+    "conclusion": "布局一字不差；一度读到的 201px 判定为另一次会话的文本度量抖动（同次运行 offsetHeight == rect height，且 197 与 CSS 期望值 20+22+8+146.75 吻合）"
+  },
+  "behavior_unchanged": {
+    "panel": "280x197, overflow 0",
+    "pill": "256x29",
+    "visibleAfterClickMs": 28,
+    "billingCardsDefault": 0,
+    "reducedMotionAnimations": 0,
+    "panelUnmountedAfterClose": 1
+  },
+  "kept_but_listed": [
+    "hover/active 白色叠加（瞬时，dsh 规定用法）",
+    ".dshoq-switch-row 白8% 与开关轨道（弹窗内部）",
+    ".dshoq-shimmer 扫光白22%（仅加载态）",
+    "--oq-edge（仅浅色主题的深色细边）"
+  ],
+  "numeric_summary": "panelBgDelta=0, cardWhiteOverlayPct_before=56.85, cardWhiteOverlayPct_after=3.52, pillBgLuma_before=70, pillBgLuma_after=44.67, pillBgDelta=-25, offsetHeight_before=197, offsetHeight_after=197, overflowPx=0, visibleAfterClickMs=28",
+  "artifacts": {
+    "phase1": ".verify/PHASE1-COLOR-AUDIT.md",
+    "phase3": ".verify/PHASE3-COLOR-EVIDENCE.md",
+    "compare_image": ".verify/shots/color-compare.png（图2基准｜改前｜改后）",
+    "sampler": ".verify/sample-colors.mjs（无头 Chrome canvas 取色，零依赖）"
+  },
+  "gear_settings_parity": {
+    "inventory": ".verify/GEAR-SETTINGS-INVENTORY.md（26 处：客户端 11 + 宿主 6 + 文档/脚本 6 + 明确不属于齿轮的 4）",
+    "schema_billing": "新增 billing: z.boolean().default(false)，描述与弹窗副文案同句（BILLING_DESC）",
+    "write_through": "齿轮保存/开关改动 → settingsScope.update() 写回设置存储 + 凭证文件兜底；响应回报 persisted",
+    "bug_fixed": "writable 在服务（ctx.settings.writable）而非 SettingsScope → 原判断静默短路写回；修复后 settingsWritable 由 false 变 true",
+    "probe_flow": {
+      "before.billing": true,
+      "afterOff.billing": false,
+      "afterOn.billing": true,
+      "postViaButton.source": "settings",
+      "postDirect.persisted": [
+        "credentials",
+        "settings"
+      ],
+      "restore.billing": false,
+      "final.source": "settings",
+      "settingsWritable": true
+    },
+    "on_disk": "~/.dsh/settings.yaml 新增 opencode-quota:{billing:false, workspaceId:…}；与备份 diff 仅此 3 行；凭证文件 cookie 行未变",
+    "no_tooling": "package.json scripts=null；无 tsconfig/eslint/vitest/Makefile/.github → 无可跑的测试/类型检查/构建/lint；以 node --check + 接口/文件级手动验证代替",
+    "hot_reload_incident": "dev_reload_package 让宿主 entry 变 [failed]（activeEntry=none），重载无法恢复 → 走一次干净重启修复；随后 GET 显示 settingsWritable=true"
+  }
+}

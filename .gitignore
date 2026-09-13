@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+
+# 齿轮验证用的宿主配置备份（含明文密钥，永不入库）
+.verify/backup/

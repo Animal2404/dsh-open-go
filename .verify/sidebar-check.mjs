@@ -381,6 +381,49 @@ async function main() {
   await shot(cdp, sessionId, '05-panel-billing', await evaluate(cdp, sessionId, unionBox(['.dshoq-pill', '.dshoq-panel'], 10)))
   await shot(cdp, sessionId, '05b-panel-billing-only', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
 
+  // ── 5c. 齿轮设置全流程探针：开关落盘 / 保存写回设置存储 / 两端同源 ──
+  // 注意：前面的步骤已经 Esc 关掉了弹窗，所以这里必须先点 ⚙ 重新打开（上次就是漏了这步，拿到的是 null）
+  console.log('齿轮设置全流程探针…')
+  const gear = await evaluate(cdp, sessionId, `(async () => {
+    const H = { 'x-dsh-opencode-quota': '1' }
+    const getCfg = () => fetch('/dsh-opencode-quota/api/config', { headers: H }).then((r) => r.json())
+    const post = (body) => fetch('/dsh-opencode-quota/api/config', {
+      method: 'POST',
+      headers: Object.assign({ 'content-type': 'application/json' }, H),
+      body: JSON.stringify(body),
+    }).then((r) => r.json())
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+    const out = { before: await getCfg() }
+    // ① 打开齿轮弹窗（标题栏那颗 aria-label='Open GO 设置' 的图标按钮）
+    const gearBtn = [...document.querySelectorAll('.dshoq-icon')].find((b) => (b.getAttribute('aria-label') || '') === 'Open GO 设置')
+    out.gearButtonFound = !!gearBtn
+    gearBtn.click(); await wait(700)
+    const sw = () => document.querySelector('.dshoq-switch')
+    out.dialog = { open: !!document.querySelector('.dshoq-dialog'), switchFound: !!sw(), ariaChecked: sw() && sw().getAttribute('aria-checked') }
+    // ② 开关：关 -> 开（每次都该落盘到设置存储）
+    sw().click(); await wait(800)
+    out.afterOff = await getCfg()
+    sw().click(); await wait(800)
+    out.afterOn = await getCfg()
+    // ③ 保存：回填同一个 workspaceId（cookie 留空=不修改），验证 persisted 同时含 credentials 与 settings
+    const input = document.querySelector('.dshoq-input')
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setter.call(input, out.before.workspaceId || '')
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await wait(150)
+    const btn = [...document.querySelectorAll('.dshoq-btn')].find((b) => b.textContent.indexOf('保存') !== -1)
+    btn.click(); await wait(1200)
+    out.postViaButton = await getCfg()
+    out.postDirect = await post({ workspaceId: out.before.workspaceId || '', consoleCookie: '' })
+    out.afterDirect = await getCfg()
+    // ④ 复原：开关交回 false（与运行前一致），弹窗收起，避免把测试态留给用户
+    out.restore = await post({ billing: false })
+    out.final = await getCfg()
+    out.dialogStillOpen = !!document.querySelector('.dshoq-dialog')
+    return out
+  })()`)
+  console.log('  ', JSON.stringify(gear))
+
   // ── 4. 亮色主题（模拟 prefers-color-scheme: light）──
   console.log('模拟亮色主题…')
   await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: 'light' }] }, sessionId)

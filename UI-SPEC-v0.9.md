@@ -67,7 +67,12 @@
 
 - 额度：`/dsh-opencode-quota/api/status`，5 分钟轮询，展开面板时立即刷一次（`?force=1` 跳过宿主缓存）。
 - 账单：`/dsh-opencode-quota/api/official`，**仅在开关打开时**请求与轮询；关闭即清空并停轮询（不再打官网接口）。
-- 状态持久化：`dshoq-panel-open`、`dshoq-billing-on`（localStorage，读写都吞异常）。
+- 配置读写（**齿轮弹窗 ↔ 设置面板同一份**，v0.9.7 起）：
+  - `GET /api/config` → `{ workspaceId, hasWorkspaceId, hasCookie, cookieMasked, billing, settingsWritable, source }`；
+  - `POST /api/config` → `{ workspaceId?, consoleCookie?, billing? }`；空串=不修改；至少要有一项可落地改动，否则报 `请至少填写一项（workspaceId / consoleCookie），或切换账单开关`（两端同一句）；
+  - 落点：**设置存储**（`~/.dsh/settings.yaml` 的 `opencode-quota` 段，与「设置 → 插件 → opencode-quota」同源）+ **凭证文件**（`~/.dsh/.credentials.yaml`，设置服务不可用时的兜底）；响应里的 `persisted` 回报实际写到了哪几处；
+  - 读优先级：设置存储 → 环境变量/凭证文件；`settingsWritable=false` 时齿轮仍能用，但弹窗会如实说明"未落盘"。
+- 状态持久化：`dshoq-panel-open`（面板开合，纯浏览器状态）；`dshoq-billing-on` 降级为账单开关的**首屏缓存**，权威值在设置存储（挂载时用宿主值校准，弹窗打开时再校准一次）。
 - 失败降级：额度失败但手上有旧数据 → 保留旧数据 + 橙点 + 「仍显示上次数据」；从未成功过 → 红点 + 明确错误文案。
 
 ## 7. 验收清单
@@ -117,3 +122,4 @@
 - **v0.9.4**（2026-09-13）：按用户反馈「不要白色描边、要磨砂亚克力」换材质。① 材质换成 §8 那套（半透明 + `backdrop-filter` 模糊 + 噪声颗粒 + 顶部微光）；② 所有描边换成深色内圈（pill / rail / 面板 / 卡片 / GO 徽标 / 弹窗 / 开关 / 输入框 / 按钮）；③ 修掉被放出来的浏览器默认按钮白边（`<button>` 的 `2px outset`）—— 这才是那圈白线的真身。弹窗与面板都验证过计算样式 `border: 0px none`。
 - **v0.9.5**（2026-09-13）：按用户要求**把磨砂质全部换成亚克力**（模糊/噪点/半透明叠加一律下线，见 §8）。① 面改走 `button-elevated-fill` / `specific-menu` / `bg-layer-2`，抬升改走 `shadow-lv1/2/3`，交互改走 `interactive-bg-*`，遮罩改走 `bg-mask-1`；② 输入框/按钮直接抄 `ui-primitives` 的 Input/Button 配方；③ 色值收敛到 `--dsw-alias-*`（三档条、警示、账单卡），`rgba()/hex` 只剩 `var()` 回退；④ 弹窗不再用「固定深色」硬编码，改成跟主题 token 走（当年那个白底 bug 的真因是「浅色面 + 固定浅色文字」不匹配，同源 token 不会再有这个问题）。探针：`backdrop: none`、`bgImage: none`、`frostedLeftovers: 0`、pill `rgb(67,69,74)`、面板 `rgb(53,54,56)`；布局/圆角/点击区域与 v0.9.4 一致（pill 高 31 → 29px，因为不再有 1px 描边参与盒模型）。
 - **v0.9.6**（2026-09-13）：**消除泛白**。取证发现 dsh 深色侧自带白色叠加 token（`interactive-bg-hover` 白 8% / `-active` 白 14% / `border-l2` 白 12%），它们的设计用途是「状态叠加/描边」而不是「面」——把它们当面用就泛白。四处定点修正（**只动 background/变量值，布局零改动，受控 A/B 的 `panel.offsetHeight` 改前改后都是 197**）：内层卡片不再画面（图 2 里也没有）、pill 换 `button-floating-fill`（bluish-850 = 图 2 底栏色）、徽标降到白 8%、轨道改用白 8%。像素复核：白 8% 卡片色占比 **56.85% → 3.52%**（图 2 = 2.58%），面板主色占比 **28.11% → 85.00%**（图 2 = 64.01%，余差来自裁切范围）。详见 `.verify/PHASE1-COLOR-AUDIT.md`、`.verify/PHASE3-COLOR-EVIDENCE.md`。
+- **v0.9.7**（2026-09-13）：齿轮设置全量对齐（清单见 `.verify/GEAR-SETTINGS-INVENTORY.md`）。① 新增 `billing` 到宿主 schema（默认 `false`，描述与弹窗副文案**同句**），设置面板从此也有这一项；② 齿轮保存改为**同时**写凭证文件与**设置存储**（`settings.update`），设置面板不再显示旧/空值；③ 修掉一个真 bug：`writable` 在**服务**（`ctx.settings.writable`）上，`SettingsScope` 没有这个字段——原判断让写回被自己短路（实测 `settingsWritable` 由 false → true）；④ GET 增 `billing`/`settingsWritable`，POST 增 `billing` 入参、统一「至少一项可落地改动」校验与两端文案、返回 `persisted`；⑤ 客户端挂载与开弹窗时都用宿主值校准开关（换浏览器不再丢设置），开关改动即时落盘。实测：开关点两下 → 存储 `billing` 跟随；点保存 → `persisted:["credentials","settings"]`、`source` 由 `credentials` 变 `settings`；`settings.yaml` 只多出 `opencode-quota: {billing:false, workspaceId:…}` 一段，凭证文件的 cookie 行未变。
