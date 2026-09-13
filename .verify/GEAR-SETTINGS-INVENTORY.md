@@ -102,7 +102,7 @@
   点「保存」后 `source` 由 `credentials` 变 **`settings`**；直接打 POST → `persisted:["credentials","settings"]`；
   结尾 `restore` → `billing=false`（与运行前一致）；
 - 落盘证据：`~/.dsh/settings.yaml` 新增 `opencode-quota: {billing:false, workspaceId: wrk_01KZ…FWHX}`；
-  与备份 diff **只多这 3 行**；凭证文件的 `OPENCODE_CONSOLE_COOKIE` 行**未变**（探针不回填 cookie，不复制密钥）；
+  与运行前备份 diff **只多这 3 行**（备份含明文密钥，已移出仓库到 `../oq-secrets-local/`，并由 `.gitignore` 兜底永不入库）；凭证文件的 `OPENCODE_CONSOLE_COOKIE` 行**未变**（探针不回填 cookie，不复制密钥）；
 - 两端文案同句：宿主 L43 `BILLING_DESC` ↔ 客户端 L895 同一串字；
 - 仓库无测试/类型检查/构建/lint 入口（`package.json` 的 `scripts` 为 null，且无 tsconfig/eslint/vitest/Makefile/.github），
   因此验证以"可复现手动步骤"给出：`node --check` → 打 `GET/POST /api/config` → 看 `~/.dsh/settings.yaml` 与 diff。

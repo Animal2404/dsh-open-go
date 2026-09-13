@@ -12,3 +12,5 @@
 | 事故与恢复 | `dev_reload_package` 把宿主 loader entry 弄成 `[failed]`（`activeEntry=none`，旧实例仍在应答接口）→ 用一次干净重启恢复，随后 `settingsWritable: true` |
 | 版本 | `package.json` 0.9.6 → 0.9.7；`lib/client.js` / `lib/index.js` 头注释同步 |
 | 探针 | `.verify/probes-v0.9.7.json` |
+
+| 事故 | 首次提交误把凭证备份（含明文密钥）纳入 → GitHub 密钥扫描拒绝推送（**未公开**）；随即重写该未推送提交、备份移出仓库、`.gitignore` 兜底，再推送并重建 release |
