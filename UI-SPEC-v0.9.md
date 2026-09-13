@@ -90,11 +90,12 @@
 
 | 部位 | 取值（全部是项目 token，括号内为回退） |
 |---|---|
-| 收起态 pill / 窄栏 rail | 面 `--dsw-alias-button-elevated-fill`（与侧边栏「新会话」按钮同款）；悬停 `--dsw-alias-button-floating-hover`；按下 `--dsw-alias-interactive-bg-active`；抬升 `--dsw-shadow-lv1`（悬停 `--dsw-shadow-lv2`） |
-| 展开面板 | 面 `--dsw-specific-menu`（= `--dsw-alias-bg-layer-3`，菜单/浮层专用 token）；抬升 `--dsw-shadow-lv3` |
+| 收起态 pill / 窄栏 rail | 面 `--dsw-alias-button-floating-fill`（深色侧 = bluish-850 `rgb(44,44,46)`，与图 2 底栏实测一致；v0.9.5 曾用 `button-elevated-fill` = bluish-750，偏白 +23 阶）；悬停 `--dsw-alias-button-floating-hover`（bluish-800）；按下 `--dsw-alias-interactive-bg-active`；抬升 `--dsw-shadow-lv1`（悬停 `--dsw-shadow-lv2`） |
+| 展开面板 | 面 `--dsw-specific-menu`（= `--dsw-alias-bg-layer-3` = bluish-800 `rgb(53,54,56)`，与图 2 面板实测一致）；抬升 `--dsw-shadow-lv3` |
 | ⚙ 弹窗 | 面 `--dsw-alias-bg-layer-2`（Modal 的卡片配方）；抬升 `--dsw-shadow-lv3`；遮罩 `--dsw-alias-bg-mask-1`（Modal 的 mask token，**不带** 那道 blur(2px)） |
-| 面板内层卡片 | 面 `--dsw-alias-interactive-bg-hover`（两主题下都成立的浅填充） |
-| `GO` 徽标 / 开关轨道（关） | 面 `--dsw-alias-interactive-bg-active` |
+| 面板内层卡片 | **不画面**（v0.9.6 起）：图 2 的面板里就是三档行直接坐在 bluish-800 上，没有更亮的内层卡片；卡片容器只保留 padding/圆角/gap 的布局职责 |
+| 进度条轨道（档位条 / 明细条） | `--oq-bar-track` = `--dsw-alias-interactive-bg-hover`（白 8%，叠在面板上 = `rgb(69,70,72)`，与图 2 轨道实测一致）；滚动条滑块仍用 `--oq-track`（`border-l2`，白 12%） |
+| `GO` 徽标 / 开关轨道（关） | 面 `--dsw-alias-interactive-bg-hover`（白 8%；v0.9.5 用 active 白 14%，偏白约 20 阶） |
 | 开关轨道（开）/ 焦点环 | `--dsw-alias-brand-primary-new-colorprimary-new-color`（设计批准的品牌蓝） |
 | 输入框 | 抄 `ui-primitives/Input`：`border: 1px solid --dsw-alias-border-l2` + 面 `--dsw-alias-bg-layer-1`，聚焦 `border-color: --dsw-alias-brand-primary` |
 | 按钮 | 抄 `ui-primitives/Button`：取消 = ghost（透明 + `--dsw-alias-interactive-bg-hover`）；保存 = `--dsw-alias-button-ghost-active-fill`（中性实心，悬停 `--dsw-alias-button-ghost-active-hover`） |
@@ -115,3 +116,4 @@
 - **v0.9.3**（2026-09-13）：按用户反馈「点开太慢、要先展开再刷新」修开合时序。三处改动：① 定位不再等面板高度（只量 pill + `bottom` 锚定）；② `render = open || closing`，展开与挂载同一帧；③ 刷新改到**上屏后下一帧**才发；④ 数据已在手上时展开直接显示真值。实测「点击 → 可见」**367 → 19ms**，刷新请求起点 +24ms（在可见 +19ms 之后）。
 - **v0.9.4**（2026-09-13）：按用户反馈「不要白色描边、要磨砂亚克力」换材质。① 材质换成 §8 那套（半透明 + `backdrop-filter` 模糊 + 噪声颗粒 + 顶部微光）；② 所有描边换成深色内圈（pill / rail / 面板 / 卡片 / GO 徽标 / 弹窗 / 开关 / 输入框 / 按钮）；③ 修掉被放出来的浏览器默认按钮白边（`<button>` 的 `2px outset`）—— 这才是那圈白线的真身。弹窗与面板都验证过计算样式 `border: 0px none`。
 - **v0.9.5**（2026-09-13）：按用户要求**把磨砂质全部换成亚克力**（模糊/噪点/半透明叠加一律下线，见 §8）。① 面改走 `button-elevated-fill` / `specific-menu` / `bg-layer-2`，抬升改走 `shadow-lv1/2/3`，交互改走 `interactive-bg-*`，遮罩改走 `bg-mask-1`；② 输入框/按钮直接抄 `ui-primitives` 的 Input/Button 配方；③ 色值收敛到 `--dsw-alias-*`（三档条、警示、账单卡），`rgba()/hex` 只剩 `var()` 回退；④ 弹窗不再用「固定深色」硬编码，改成跟主题 token 走（当年那个白底 bug 的真因是「浅色面 + 固定浅色文字」不匹配，同源 token 不会再有这个问题）。探针：`backdrop: none`、`bgImage: none`、`frostedLeftovers: 0`、pill `rgb(67,69,74)`、面板 `rgb(53,54,56)`；布局/圆角/点击区域与 v0.9.4 一致（pill 高 31 → 29px，因为不再有 1px 描边参与盒模型）。
+- **v0.9.6**（2026-09-13）：**消除泛白**。取证发现 dsh 深色侧自带白色叠加 token（`interactive-bg-hover` 白 8% / `-active` 白 14% / `border-l2` 白 12%），它们的设计用途是「状态叠加/描边」而不是「面」——把它们当面用就泛白。四处定点修正（**只动 background/变量值，布局零改动，受控 A/B 的 `panel.offsetHeight` 改前改后都是 197**）：内层卡片不再画面（图 2 里也没有）、pill 换 `button-floating-fill`（bluish-850 = 图 2 底栏色）、徽标降到白 8%、轨道改用白 8%。像素复核：白 8% 卡片色占比 **56.85% → 3.52%**（图 2 = 2.58%），面板主色占比 **28.11% → 85.00%**（图 2 = 64.01%，余差来自裁切范围）。详见 `.verify/PHASE1-COLOR-AUDIT.md`、`.verify/PHASE3-COLOR-EVIDENCE.md`。

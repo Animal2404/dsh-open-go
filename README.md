@@ -22,10 +22,11 @@ Open GO 套餐额度小组件，挂在 DSH Web 侧边栏**设置按钮上方**�
 - 顶部就是「显示官方账单」开关，下面填 workspace id 与登录 cookie
 - 在 DSH 的「设置 → 插件 → opencode-quota」里也能填这两项；cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
 
-**材质**
-- **亚克力**（Acrylic）：面 / 抬升 / 交互全部取 DSH 的语义 token —— pill 用 `--dsw-alias-button-elevated-fill`（与侧边栏「新会话」同款）、面板用 `--dsw-specific-menu`、弹窗用 `--dsw-alias-bg-layer-2`、抬升用 `--dsw-shadow-lv1/2/3`、遮罩用 `--dsw-alias-bg-mask-1`；输入框与按钮直接沿用 `ui-primitives` 的 Input/Button 配方
-- **没有模糊、没有噪点、没有自造半透明**（磨砂玻璃那套已下线）：不依赖 `backdrop-filter`，旧浏览器/低配机器上也不掉帧；`rgba()/hex` 只作为 `var()` 的回退值存在
-- **不画白描边**：深色侧靠面比底亮分界，浅色侧用 `light-dark(var(--dsw-alias-border-l2), transparent)` 给一条深色细边
+**材质（v0.9.6 起严格对齐 dsh 配色，无泛白）**
+- **面 = dsh 的层色**：收起态 pill 用 `--dsw-alias-button-floating-fill`（bluish-850）、展开面板用 `--dsw-specific-menu`（bluish-800）、⚙ 弹窗用 `--dsw-alias-bg-layer-2`（bluish-850）；抬升用 `--dsw-shadow-lv1/2/3`，遮罩用 `--dsw-alias-bg-mask-1`
+- **白色叠加只留给「状态」，不当「面」用**：内层卡片不再画面（与参考图一致），进度条轨道与 `GO` 徽标统一降到 `--dsw-alias-interactive-bg-hover`（白 8%），hover/active 才用 8%/14% 叠加
+- 没有模糊、没有噪点、没有自造色值：`backdrop-filter` 与噪点贴图已下线；`rgba()/hex` 只作为 `var()` 的回退值
+- 取证与验证：`.verify/PHASE1-COLOR-AUDIT.md`（dsh 色源 + 泛白定位）、`.verify/PHASE3-COLOR-EVIDENCE.md`（改前改后色值与像素复核）
 
 **手感/可达性**
 - **点开就是立刻展开**：面板当帧上屏（实测 19ms），刷新请求在展开之后才发，绝不挡开合

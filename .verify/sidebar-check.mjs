@@ -172,6 +172,8 @@ const PROBE = `
     panel: panel ? {
       w: Math.round(panel.getBoundingClientRect().width),
       h: Math.round(panel.getBoundingClientRect().height),
+      offsetH: Math.round(panel.offsetHeight), // 不含 transform 的布局高度：用来区分"真布局变化"与"动效缩放期间量测抖动"
+      offsetW: Math.round(panel.offsetWidth),
       x: Math.round(panel.getBoundingClientRect().left),
       y: Math.round(panel.getBoundingClientRect().top),
       bg: p.backgroundColor, color: p.color, radius: p.borderRadius,
