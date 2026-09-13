@@ -1,0 +1,35 @@
+{
+  "widget": "dsh-opencode-quota v0.9.3",
+  "verified_at": "2026-09-13T08:16+08:00",
+  "how": "node .verify/sidebar-check.mjs（无头 Chrome + CDP，自签 127.0.0.1 会话 cookie，载入运行中的 dsh web）+ 页面内 rAF 逐帧采样 + performance resource timing",
+  "open_latency": {
+    "before_v092": { "mountMs": 28, "visibleMs": 367, "note": "面板 28ms 已挂载，却一直 visibility:hidden 到 367ms（= 刷新响应回来那一刻）才显示" },
+    "after_v093": { "mountMs": 19, "visibleMs": 19, "refreshRequestAtMs": 24, "refreshRequestDurMs": 325, "note": "点击当帧上屏；刷新请求在可见之后 5ms 才发出（先展开、后刷新）" },
+    "frames": 85,
+    "pctAtFirstPaint": "7%,20%,2%",
+    "enterAnimationMs": 200
+  },
+  "probes": {
+    "bundleMarkHit": 1,
+    "pillW": 256,
+    "pillH": 31,
+    "chevCollapsed": "matrix(-1, 0, 0, -1, 0, 0)",
+    "chevOpen": "none",
+    "panelW": 280,
+    "panelH": 201,
+    "panelHWithBilling": 429,
+    "panelOverflowX": 0,
+    "panelOverflowY": 0,
+    "tierRows": 3,
+    "sectionTitlesDefault": 0,
+    "sectionTitlesBilling": 1,
+    "billingCardsDefault": 0,
+    "billingCardsOn": 2,
+    "dialogW": 340,
+    "dialogCenterX": 720,
+    "reducedMotionAnimations": 0,
+    "panelUnmountedAfterClose": 1
+  },
+  "numeric_summary": "visibleAfterClickMs=19, refreshRequestAtMs=24, refreshRequestDurMs=325, mountMs=19, panelH=201, panelHWithBilling=429, panelOverflowX=0, panelOverflowY=0, tierRows=3, billingCardsDefault=0, billingCardsOn=2, reducedMotionAnimations=0",
+  "v093_delta": "先把点击 → 可见从 367ms 压到 19ms（定位改为只量 pill + bottom 锚定；render = open || closing 当帧挂载），再把刷新挪到上屏之后（实测请求起点 +24ms）；数据已在手上时展开直接显示真值（pctAtFirstPaint=7%,20%,2%）"
+}

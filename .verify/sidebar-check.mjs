@@ -195,6 +195,54 @@ const PROBE = `
   }
 })()`
 
+/** 开合延迟测量：点 pill 之后，逐帧记「面板是否挂载 / 是否可见 / 行有没有数 / 动画」。
+ *  目的是把"感觉慢"拆成可比的毫秒：挂载延迟、可见延迟、动画时长、数据到位时间。 */
+const MEASURE_OPEN = `
+(async () => {
+  const t = () => performance.now()
+  const pill = document.querySelector('.dshoq-pill')
+  if (!pill) return { error: 'no pill' }
+  const marks = {}
+  const rowsText = () => [...document.querySelectorAll('.dshoq-pct')].map((e) => e.textContent).join(',')
+  const before = { rows: document.querySelectorAll('.dshoq-row').length, updated: document.querySelector('.dshoq-time')?.textContent ?? null }
+  const frames = []
+  const t0 = t()
+  pill.click()
+  const start = t()
+  let paintedAt = null
+  await new Promise((res) => {
+    const tick = () => {
+      const now = t() - t0
+      const p = document.querySelector('.dshoq-panel')
+      const vis = p ? getComputedStyle(p).visibility : null
+      const anim = p ? getComputedStyle(p).animationName : null
+      if (p && marks.mount === undefined) marks.mount = Math.round(now)
+      if (vis === 'visible' && marks.visible === undefined) { marks.visible = Math.round(now); paintedAt = now }
+      if (p && anim === 'dshoq-in' && marks.animStart === undefined) marks.animStart = Math.round(now)
+      if (p && anim === 'none' && marks.animStart !== undefined && marks.animEnd === undefined) marks.animEnd = Math.round(now)
+      frames.push({ t: Math.round(now), panel: !!p, vis, anim, rows: document.querySelectorAll('.dshoq-row').length, pct: rowsText(), upd: (document.querySelector('.dshoq-time')?.textContent ?? '').trim() })
+      if (now < 1400) requestAnimationFrame(tick); else res()
+    }
+    requestAnimationFrame(tick)
+  })
+  const panel = document.querySelector('.dshoq-panel')
+  const anims = panel && panel.getAnimations ? panel.getAnimations().map((a) => ({ name: a.animationName, dur: a.effect?.getTiming?.().duration ?? null })) : null
+  // 刷新请求相对"点击那一刻"的起点（performance 时间轴同源）：验证「先展开、后刷新」
+  const apiReqs = performance.getEntriesByType('resource')
+    .filter((e) => e.name.indexOf('/dsh-opencode-quota/api/status') !== -1)
+    .map((e) => ({ at: Math.round(e.startTime - t0), dur: Math.round(e.duration) }))
+  return {
+    before,
+    marks: { ...marks, animDurationConfigured: anims },
+    first: frames.slice(0, 10),
+    after600: frames.find((f) => f.t >= 600) ?? null,
+    frames: frames.length,
+    rowsAtFirstPaint: (frames.find((f) => f.vis === 'visible') ?? {}).rows ?? null,
+    pctAtFirstPaint: (frames.find((f) => f.vis === 'visible') ?? {}).pct ?? null,
+    apiRequestsAfterClick: apiReqs,
+  }
+})()`
+
 async function main() {
   if (!CHROME) throw new Error('找不到 Chrome/Edge：设 CHROME_PATH 环境变量')
   mkdirSync(OUT, { recursive: true })
@@ -261,6 +309,13 @@ async function main() {
   console.log('  ', JSON.stringify(await evaluate(cdp, sessionId, PROBE)))
   await shot(cdp, sessionId, '01-pill', await evaluate(cdp, sessionId, boxOf('.dshoq-pill', 6)))
   await shot(cdp, sessionId, '01b-window', null)
+
+  // ── 0b. 开合延迟测量（点 pill → 面板挂载 → 可见 → 动画结束 → 数据刷新）──
+  console.log('开合延迟测量…')
+  console.log('  ', JSON.stringify(await evaluate(cdp, sessionId, MEASURE_OPEN)))
+  await sleep(200)
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); if (p) p.click(); return true })()`)
+  await sleep(500)
 
   // ── 1. 展开面板（账单默认关）──
   console.log('点开 pill…')
