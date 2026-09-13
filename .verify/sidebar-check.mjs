@@ -163,6 +163,11 @@ const PROBE = `
     pillText: pill ? (pill.textContent || '').replace(/\\s+/g, ' ').trim() : null,
     pillBox: pill ? (() => { const r = pill.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), x: Math.round(r.left), y: Math.round(r.top) } })() : null,
     pillExpanded: pill ? pill.getAttribute('aria-expanded') : null,
+    chev: (() => {
+      const c = document.querySelector('.dshoq-chev') || document.querySelector('.dshoq-rail .dshoq-chev')
+      if (!c) return null
+      return { cls: c.getAttribute('class'), transform: getComputedStyle(c).transform }
+    })(),
     railText: rail ? (rail.textContent || '').replace(/\\s+/g, ' ').trim() : null,
     panel: panel ? {
       w: Math.round(panel.getBoundingClientRect().width),

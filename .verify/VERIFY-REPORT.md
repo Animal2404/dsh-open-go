@@ -64,3 +64,20 @@ README 里的 `assets/screenshot-*.png` 已同步替换成本轮截图（同一�
 | 其他项（pill、溢出、账单卡数、弹窗居中、reduced-motion、收起卸载） | 全绿 | 全绿（不变） |
 
 截图：`shots/02b-panel-only.png`（无标题）、`shots/05b-panel-billing-only.png`（只剩「官方账单」分区线）。
+
+---
+
+## 附：v0.9.2 追补（2026-09-13 08:10）
+
+**用户反馈**：收起态 pill 右边的箭头反了（截图圈出）。
+
+**改动**：箭头方向掉头 —— **收起 `▾`、展开 `▴`**。原实现是收起 `▴` / 展开 `▾`（与参考图里「面板展开时显示 `^`」相反）。基础形状本身是朝上的 chevron，所以只改一处：把「展开时旋转 180°」改成「收起时旋转 180°」（CSS 类 `--open` → `--closed`），弹簧曲线与时长不变。
+
+**复跑验证**（`node .verify/sidebar-check.mjs` → exit 0，新增 `chev` 探针）：
+
+| 探针 | 收起态 | 展开态 |
+|---|---|---|
+| `chev.cls` | `dshoq-chev dshoq-chev--closed` | `dshoq-chev` |
+| `chev.transform` | `matrix(-1, 0, 0, -1, 0, 0)`（= 旋转 180° → 朝下 ▾） | `none`（朝上 ▴） |
+
+截图目检：`shots/01-pill.png`（收起，箭头朝下）、`shots/02-panel-quota.png`（展开，箭头朝上）。其余探针（面板 280×201 / 账单开 429、溢出 0、账单默认 0 卡、弹窗 340×435 居中、reduced-motion 动画数 0、收起后卸载）与 v0.9.1 完全一致。
