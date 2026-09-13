@@ -188,3 +188,28 @@ lib/index.js L827-832:
 4. **UI 要跟主题走**：别用会随主题变量漂移的颜色，重要弹窗用固定色。
 5. **数据优先官方**：能调官方 RPC 就别用本地估算，用户在乎"官方准确"。
 6. 用户会在意细节（字体、配色、按钮文案、舍入一致性），改 UI 后要实际截图核对，不要光看代码。
+7. **给容器加动效之前先清点它内部的 `fixed` 子元素**：`transform`（含 `animation` 里的）会把容器变成包含块，`position:fixed` 的浮层会被容器接管定位并被裁切（见 §八）。
+8. **语法/编译通过 ≠ 看着对**：本轮的真 bug（弹窗被面板裁掉）语法一点问题都没有，是无头浏览器截图一眼看出来的——UI 改动一律真截图。
+
+---
+
+## 八、v0.9.0：按参考图整体重做 UI + 账单开关（2026-09-13）
+
+**需求**（参考图 + 用户当场拍板）：面板改成三档紧凑列表（`5h 滚动` / `7d 每周` / `1m 每月`：名称 + 进度条 + 百分比，下一行「距重置」）；收起态 pill 显示三档读数（`GO 5h 7% · wk 12% · mo 85%`）；官方账单**默认隐藏**，开关放右上角 ⚙ 里；在此基础上做动效与细节优化。
+
+**改了什么**
+- `lib/client.js` 重写（v0.8.0 → v0.9.0，仍无构建步骤）：一份注入式 CSS（类名 `dshoq-*`）+ React.createElement 渲染；三档元数据从 `每5小时/每周/每月` 改为参考图用语 `5h 滚动 / 7d 每周 / 1m 每月`，pill 里用短标签 `5h/wk/mo`。
+- 收起态：`<button class="dshoq-pill">`（`GO` 徽标 + 状态点 + 三档读数 + 箭头），替代原「一条月额度条 + 今日消费」；带 `aria-expanded`，键盘可开合。
+- 展开面板：标题栏 + 「额度」卡片（三行）+ 可选「官方账单」；三档行的「距重置」用 `resetsAt` 现场算成紧凑式（`2h6m` / `1d10h` / `29d10h`），**每 30s 心跳自己走**，不再依赖宿主返回的中文长句。
+- 账单开关：`localStorage['dshoq-billing-on']`（默认 false）；关着时**既不渲染、也不请求** `/api/official`——原来是无条件 5 分钟轮询官网接口。
+- 动效：面板进出场（200ms / 140ms，只动 transform + opacity）、数值与进度条 ease-out 补间并从 0 生长、齿轮悬停旋转、箭头旋转变向、状态点呼吸、开关弹簧滑块；全部可被 `prefers-reduced-motion` 关掉。
+- 警示：≥80% 橙、≥95% 红（进度条 + 百分比 + pill 里的数字同步变色）。
+- 文档：新增 `UI-SPEC-v0.9.md`（参考图逐项对照 + token + 动效/可达性清单 + 验收表），README 重写功能与截图。
+
+**验证方式（这轮建立的可复用套路）**
+`.verify/sidebar-check.mjs`：零依赖无头 Chrome + CDP —— 用 `~/.dsh/.credentials.yaml` 里的 `client-connection/browser-session` 密钥自签一个 127.0.0.1 会话 cookie，打开**正在运行的** dsh web，依次截 pill / 面板 / ⚙ 弹窗（开关关→开）/ 账单展开 / 收起态，并打印几何与样式探针（溢出、圆角、字号、动画名、滑块 transform、localStorage）。约 1 分钟跑完，不重启宿主、不碰用户浏览器进程。
+结果记在 `.verify/VERIFY-REPORT.md`：10 项检查通过，4 项缺口（亮色主题被宿主钉死、rail 未截图等）明确列出。
+
+**踩坑（本轮最值钱的一条）**
+- **祖先的 `transform` 会抢走 `position:fixed` 子元素的定位**：面板为了进场动效加了 `animation` + `transform-origin` → 留在面板里的 ⚙ 弹窗（`position:fixed; inset:0`）被面板接管包含块，宽度 340 被压成 278，还被 `overflow-y:auto` 裁掉半截、跟着面板滚动。首轮截图一眼看到（探针同时给出 `parent: dshoq-scope dshoq-backdrop`、`w: 278`）。
+- 修法：弹窗改成独立 `ReactDOM.createPortal(document.body)`；「点外收起」判断补 `dlgRef` 放行（否则点弹窗会把面板一起关掉）；面板收起时同时 `setCfgOpen(false)`，不留孤儿浮层。

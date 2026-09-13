@@ -1,38 +1,52 @@
 # ⚡ dsh-open-go
 
-Open GO 套餐额度 + 官方账单小组件，挂在 DSH Web 侧边栏**设置按钮上方**（`sidebar.footer.action` 插槽）。
+Open GO 套餐额度小组件，挂在 DSH Web 侧边栏**设置按钮上方**（`sidebar.footer.action` 插槽）。
 
 ## 功能
 
-**Open GO 额度**（官方 usage 接口）
-- 滚动 / 每周 / 每月三档额度百分比条 + 重置时间
-- 标题旁显示 24 时制更新时间（如 `17:35 更新`）
-- 点击 ↻ **一键刷新全部**（额度 + 账单，跳过缓存），每 5 分钟自动轮询
+**收起态 pill**
+- 单行读数：`GO` 徽标 + 状态点 + `5h 7% · wk 12% · mo 85%` 三档百分比 + 箭头
+- 点它就地展开；开合状态持久化（localStorage）
 
-**官方账单**（opencode 控制台 getCosts RPC，非本地估算）
-- **今日**：蓝色块，按模型柱状条（模型名 + 占比% + 金额）
-- **本月**：绿色块，按模型柱状条（top 4）
+**展开面板**（额度）
+- 三档紧凑行：`5h 滚动` / `7d 每周` / `1m 每月` —— 名称 + 进度条 + 百分比，下面一行 `距重置 2h6m`
+- 倒计时每 30 秒自己走（`4h21m` / `1d10h` / `29d10h`）；用量 ≥80% 转橙、≥95% 转红
+- 标题旁显示 24 时制更新时间（如 `17:35 更新`）；点 ↻ 一键刷新全部（跳过缓存），每 5 分钟自动轮询
+
+**官方账单**（opencode 控制台 getCosts RPC，非本地估算）——**默认隐藏**
+- 在面板右上角 **⚙ 里开关**：打开才显示、也才会请求控制台接口；关掉即停轮询
+- **今日**：紫色块，按模型明细（模型名 + 占比% + 金额）；**本月**：绿色块（top 4）
 - 金额来自官方控制台，精确到分
 
-**设置面板配置**（当前版本已内置）
-- 在 DSH 的「设置 → 插件 → opencode-quota」中直接填写 workspace id 和登录 cookie
-- cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
+**⚙ 弹窗**
+- 顶部就是「显示官方账单」开关，下面填 workspace id 与登录 cookie
+- 在 DSH 的「设置 → 插件 → opencode-quota」里也能填这两项；cookie 字段为 secret 类型（密码框显示），凭据只存本地、不出服务器
 
-**窄侧栏**（rail 模式）自动退化为小图标按钮。
+**手感/可达性**
+- 面板弹簧开合、数值与进度条从 0 生长、状态点呼吸、齿轮悬停旋转、箭头旋转变向
+- 键盘可达（Tab/Enter/Space 开合、`Esc` 收起）、`role="switch"` 开关、`prefers-reduced-motion` 下全部动效关闭
+
+**窄侧栏**（rail 模式）自动退化为小图标按钮（三根迷你条 + 月度百分比）。
+
+> 视觉规范见 [`UI-SPEC-v0.9.md`](UI-SPEC-v0.9.md)，本机视觉验证记录见 [`.verify/VERIFY-REPORT.md`](.verify/VERIFY-REPORT.md)。
 
 ## 截图
 
-侧边栏小组件（额度 + 官方账单）：
+收起态（侧边栏「设置」上方）：
 
-![主界面](assets/screenshot-main.png)
+![收起态](assets/screenshot-pill.png)
 
-账单配置弹窗（⚙ 齿轮打开，填写 workspace id 和 cookie）：
+展开面板（默认只显示额度）：
+
+![额度面板](assets/screenshot-closeup.png)
+
+⚙ 里的账单开关（打开后才显示官方账单）：
 
 ![配置弹窗](assets/screenshot-config.png)
 
-组件特写（今日/本月按模型明细）：
+账单打开后的面板（今日 / 本月按模型明细）：
 
-![特写](assets/screenshot-closeup.png)
+![主界面](assets/screenshot-main.png)
 
 ## 安装
 
@@ -111,18 +125,32 @@ Invoke-RestMethod -Uri http://127.0.0.1:3080/dsh-opencode-quota/api/official -He
 ## 目录结构
 
 ```
-lib/index.js    # 宿主：额度 / 账单 RPC / 设置面板注册，凭据不出服务器
-lib/client.js   # 浏览器端组件（sidebar.footer.action 插槽）
-bin/            # modlens 包装器（可选，识图用量本地记录）
+lib/index.js        # 宿主：额度 / 账单 RPC / 设置面板注册，凭据不出服务器
+lib/client.js       # 浏览器端组件（sidebar.footer.action 插槽，无构建步骤）
+UI-SPEC-v0.9.md     # 视觉规范（参考图对照、token、动效与可达性清单）
+.verify/            # 本机视觉验证：无头 Chrome 脚本 + 截图 + 验证报告（不随包发布）
+bin/                # modlens 包装器（可选，识图用量本地记录）
 cordis.patch.yml
 ```
+
+## 本地视觉验证
+
+```powershell
+cd E:\DeepSeek\dsh-opencode-quota
+node .verify\sidebar-check.mjs      # 打开正在运行的 dsh web，截 pill / 面板 / ⚙ 弹窗 / 账单开关，并打印几何探针
+```
+
+脚本自己用 `~/.dsh/.credentials.yaml` 里的 `client-connection/browser-session` 密钥签一个 127.0.0.1 会话 cookie，
+**不会碰用户正在用的浏览器进程，也不会重启宿主**。
 
 ## 说明
 
 - 官方账单走 opencode 控制台的登录会话认证（官方限制，API key 无法访问），所以必须配置 cookie；额度接口用 API key，无需 cookie
+- 账单默认隐藏：不打开开关时宿主不会去请求控制台接口（省一次外网请求，也避免 cookie 过期时的无谓报错）
 - 所有凭据只在宿主侧使用，绝不下发浏览器
 - 时间显示为本地时区 24 时制；账单按 +08:00 时区聚合（与控制台页面一致）
 - 账单 RPC 自动重试 3 次（抗网络抖动）；cookie 过期时返回明确提示
+- 改了 `lib/client.js` 后浏览器 **Ctrl+Shift+R** 硬刷新即可生效（bundle 带内容哈希，不必重启宿主）
 
 ## 许可
 
