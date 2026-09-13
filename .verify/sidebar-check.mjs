@@ -222,7 +222,11 @@ const MEASURE_OPEN = `
       if (vis === 'visible' && marks.visible === undefined) { marks.visible = Math.round(now); paintedAt = now }
       if (p && anim === 'dshoq-in' && marks.animStart === undefined) marks.animStart = Math.round(now)
       if (p && anim === 'none' && marks.animStart !== undefined && marks.animEnd === undefined) marks.animEnd = Math.round(now)
-      frames.push({ t: Math.round(now), panel: !!p, vis, anim, rows: document.querySelectorAll('.dshoq-row').length, pct: rowsText(), upd: (document.querySelector('.dshoq-time')?.textContent ?? '').trim() })
+      const fill = document.querySelector('.dshoq-fill')
+      const bar = document.querySelector('.dshoq-bar')
+      const fw = fill ? Math.round(fill.getBoundingClientRect().width * 10) / 10 : null
+      const bw = bar ? Math.round(bar.getBoundingClientRect().width) : null
+      frames.push({ t: Math.round(now), panel: !!p, vis, anim, rows: document.querySelectorAll('.dshoq-row').length, w1: fw, barW: bw, pct: rowsText(), upd: (document.querySelector('.dshoq-time')?.textContent ?? '').trim() })
       if (now < 1400) requestAnimationFrame(tick); else res()
     }
     requestAnimationFrame(tick)
@@ -242,6 +246,22 @@ const MEASURE_OPEN = `
     rowsAtFirstPaint: (frames.find((f) => f.vis === 'visible') ?? {}).rows ?? null,
     pctAtFirstPaint: (frames.find((f) => f.vis === 'visible') ?? {}).pct ?? null,
     apiRequestsAfterClick: apiReqs,
+    // 展开生长动画：首帧宽度 / 终态宽度 / 中间出现过的不同宽度个数（>2 说明是补间而不是瞬跳）
+    fill: (() => {
+      const withFill = frames.filter((f) => f.w1 !== null)
+      const widths = withFill.map((f) => f.w1)
+      const uniq = [...new Set(widths)]
+      const last = withFill[withFill.length - 1] ?? null
+      return {
+        firstFrame: widths[0] ?? null,
+        settled: last ? last.w1 : null,
+        barW: last ? last.barW : null,
+        settledRatioPct: last && last.barW ? Math.round((last.w1 / last.barW) * 1000) / 10 : null,
+        distinctWidths: uniq.length,
+        monotonic: widths.every((w, i) => i === 0 || w >= widths[i - 1]),
+        samplePath: widths.slice(0, 8),
+      }
+    })(),
   }
 })()`
 
@@ -317,6 +337,25 @@ async function main() {
   // ── 0b. 开合延迟测量（点 pill → 面板挂载 → 可见 → 动画结束 → 数据刷新）──
   console.log('开合延迟测量…')
   console.log('  ', JSON.stringify(await evaluate(cdp, sessionId, MEASURE_OPEN)))
+  await sleep(200)
+  // 收起 → 确认面板已卸载 → 再展开：验证生长动画能重播（第一轮的终点也要停住）
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); if (p) p.click(); return true })()`)
+  await sleep(600)
+  const unmounted = await evaluate(cdp, sessionId, `(() => document.querySelector('.dshoq-panel') === null)()`)
+  console.log('重播前确认面板已卸载:', unmounted)
+  console.log('重播测量（第二次展开）…')
+  console.log('  ', JSON.stringify(await evaluate(cdp, sessionId, MEASURE_OPEN)))
+  await sleep(200)
+  // 中途帧截图（80ms / 260ms / 800ms）：留作"从 0 长上去"的视觉证据
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); if (p) p.click(); return true })()`)
+  await sleep(600)
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); if (p) p.click(); return true })()`)
+  await sleep(80)
+  await shot(cdp, sessionId, '09-grow-80ms', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
+  await sleep(180)
+  await shot(cdp, sessionId, '09b-grow-260ms', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
+  await sleep(540)
+  await shot(cdp, sessionId, '09c-grow-settled', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
   await sleep(200)
   await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-pill'); if (p) p.click(); return true })()`)
   await sleep(500)

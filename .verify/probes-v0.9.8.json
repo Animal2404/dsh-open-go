@@ -1,0 +1,45 @@
+{
+  "widget": "dsh-opencode-quota v0.9.8",
+  "verified_at": "2026-09-13T11:50+08:00",
+  "task": "给「展开」加进度条生长动画：从 0 平滑增长到当前数据进度并停住",
+  "where": {
+    "expand_component": "lib/client.js openNow() → 面板挂载 → .dshoq-card → TIERS.map(TierRow)；账单明细为 ModelRow",
+    "data_source": "state.usage[key].percent（GET /dsh-opencode-quota/api/status 的实时值）经 props.percent 传入 TierRow / ModelRow —— 终点取的就是它，无硬编码",
+    "tween_helper": "useTweenNum(target, dur, initial)（rAF + ease-out cubic，已存在，无新增依赖；prefers-reduced-motion 时直接跳到终点）",
+    "changes": [
+      "TierRow: useTweenNum(..., 380, pct===null?0:undefined) → useTweenNum(pct===null?0:pct, 420, 0)（总是从 0 起）",
+      "ModelRow: useTweenNum(pct, 360) → useTweenNum(pct, 420, 0)（账单明细条一并生长）",
+      "pill 里的三档读数（TierReadout）保持不变：不参与生长，避免收起态也跳动"
+    ]
+  },
+  "evidence": {
+    "first_expand": {
+      "firstFramePx": 0,
+      "settledPx": 31.7,
+      "barWidthPx": 132,
+      "settledRatioPct": 24,
+      "page_readout": "24%（与该行 pct 文本一致）",
+      "distinctWidths": 25,
+      "monotonic": true,
+      "samplePathPx": [0, 2.6, 4.1, 7.1, 10, 13, 15.3, 17.6]
+    },
+    "replay_after_collapse": {
+      "panel_unmounted_confirmed": true,
+      "firstFramePx": 0,
+      "settledPx": 31.7,
+      "settledRatioPct": 24,
+      "distinctWidths": 24,
+      "monotonic": true
+    },
+    "mid_frames": {
+      "80ms": "5h=15% / 7d=17% / 1m=3%（低于终值，正在生长）",
+      "260ms": "5h=24% / 7d=27% / 1m=5%（到达终值）",
+      "shots": ["09-grow-80ms.png", "09b-grow-260ms.png", "09c-grow-settled.png"]
+    },
+    "data_change": "终点不是常量：TierRow 的 target 就是该行 percent 的实时值（接口/SDK 未改），实测终点比例 24% 与页面读数、接口数据三方一致；轮询到达新值时 useTweenNum 从当前值补间到新值",
+    "unchanged": "面板 280×197、点击→可见 28ms、账单默认 0 卡、reduced-motion 动画数 0、收起卸载 —— 均无回退",
+    "no_new_deps": "只用既有 useTweenNum（rAF），依赖未变（package.json dependencies 未动）"
+  },
+  "numeric_summary": "growFirstFramePx=0, growSettledPx=31.7, barWidthPx=132, growSettledRatioPct=24, distinctWidths=25, monotonic=1, replayFirstFramePx=0, replayDistinctWidths=24, growDurationMs=420, panelOverflowPx=0",
+  "tooling": "仓库无测试/类型检查/构建/lint 入口（package.json scripts=null）→ 验证 = node --check + 逐帧几何采样 + 中途帧截图 + 接口三方对账"
+}

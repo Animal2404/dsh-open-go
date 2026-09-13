@@ -49,7 +49,7 @@
 1. **面板开合**：`opacity/translateY(7px)/scale(.972)` → 原位，进场 200ms；退场 140ms 后才卸载（`render = open || closing`）。
 2. **展开当帧上屏**（v0.9.3 修）：展开前**只量 pill**，用 `bottom` 贴住 pill 上沿定位 —— 不等面板高度测量、不等任何数据；实测「点击 → 可见」**367ms → 19ms**。上屏后只在校正时量一次高度（上方放不下才翻到 pill 下面）。
 3. **先展开、后刷新**（v0.9.3，用户要求）：展开动作与网络请求解耦 —— 点击 → 面板上屏（同一帧）→ **下一帧（画完这一帧）才发** `?force=1` 刷新。刷新绝不挡开合（实测：面板 19ms 可见，刷新请求起点 +24ms）。
-4. **数据生长**：只有真的在等数据（展开时还没有值）才从 0 缓动到实际值（380ms）；数据已在手上就**直接显示真值**（不装作"正在加载"），之后的变化才补间。
+4. **展开生长**（v0.9.8 按用户要求恢复）：每次展开，三档进度条与百分比都从 0 缓动到**当前数据的真实值**（420ms，ease-out cubic，rAF 补间）；面板收起即卸载整块，所以重复展开必然重播；数据变化时终点随之变化（补间从当前值出发）；`prefers-reduced-motion` 下直接停在终点不播。
 5. **倒计时**：30s 心跳，`距重置` 数字自己走，不整块重绘。
 6. **刷新**：↻ 转圈（0.8s 线性）+ 状态点呼吸；失败保留上次数据并切橙点。
 7. **齿轮**：悬停旋转 45°，按下缩放 .9；弹窗 180ms 弹入。
@@ -123,3 +123,4 @@
 - **v0.9.5**（2026-09-13）：按用户要求**把磨砂质全部换成亚克力**（模糊/噪点/半透明叠加一律下线，见 §8）。① 面改走 `button-elevated-fill` / `specific-menu` / `bg-layer-2`，抬升改走 `shadow-lv1/2/3`，交互改走 `interactive-bg-*`，遮罩改走 `bg-mask-1`；② 输入框/按钮直接抄 `ui-primitives` 的 Input/Button 配方；③ 色值收敛到 `--dsw-alias-*`（三档条、警示、账单卡），`rgba()/hex` 只剩 `var()` 回退；④ 弹窗不再用「固定深色」硬编码，改成跟主题 token 走（当年那个白底 bug 的真因是「浅色面 + 固定浅色文字」不匹配，同源 token 不会再有这个问题）。探针：`backdrop: none`、`bgImage: none`、`frostedLeftovers: 0`、pill `rgb(67,69,74)`、面板 `rgb(53,54,56)`；布局/圆角/点击区域与 v0.9.4 一致（pill 高 31 → 29px，因为不再有 1px 描边参与盒模型）。
 - **v0.9.6**（2026-09-13）：**消除泛白**。取证发现 dsh 深色侧自带白色叠加 token（`interactive-bg-hover` 白 8% / `-active` 白 14% / `border-l2` 白 12%），它们的设计用途是「状态叠加/描边」而不是「面」——把它们当面用就泛白。四处定点修正（**只动 background/变量值，布局零改动，受控 A/B 的 `panel.offsetHeight` 改前改后都是 197**）：内层卡片不再画面（图 2 里也没有）、pill 换 `button-floating-fill`（bluish-850 = 图 2 底栏色）、徽标降到白 8%、轨道改用白 8%。像素复核：白 8% 卡片色占比 **56.85% → 3.52%**（图 2 = 2.58%），面板主色占比 **28.11% → 85.00%**（图 2 = 64.01%，余差来自裁切范围）。详见 `.verify/PHASE1-COLOR-AUDIT.md`、`.verify/PHASE3-COLOR-EVIDENCE.md`。
 - **v0.9.7**（2026-09-13）：齿轮设置全量对齐（清单见 `.verify/GEAR-SETTINGS-INVENTORY.md`）。① 新增 `billing` 到宿主 schema（默认 `false`，描述与弹窗副文案**同句**），设置面板从此也有这一项；② 齿轮保存改为**同时**写凭证文件与**设置存储**（`settings.update`），设置面板不再显示旧/空值；③ 修掉一个真 bug：`writable` 在**服务**（`ctx.settings.writable`）上，`SettingsScope` 没有这个字段——原判断让写回被自己短路（实测 `settingsWritable` 由 false → true）；④ GET 增 `billing`/`settingsWritable`，POST 增 `billing` 入参、统一「至少一项可落地改动」校验与两端文案、返回 `persisted`；⑤ 客户端挂载与开弹窗时都用宿主值校准开关（换浏览器不再丢设置），开关改动即时落盘。实测：开关点两下 → 存储 `billing` 跟随；点保存 → `persisted:["credentials","settings"]`、`source` 由 `credentials` 变 `settings`；`settings.yaml` 只多出 `opencode-quota: {billing:false, workspaceId:…}` 一段，凭证文件的 cookie 行未变。
+- **v0.9.8**（2026-09-13）：按用户要求给「展开」加进度条生长动画 —— 从 0 缓动到当前数据进度并停住（终点 = `/api/status` 的实时 percent，不写死）；同时把账单明细条一并纳入。实测：首帧宽度 0px → 终态 31.7px/132px = **24%**（与页面读数、接口数据一致）、25 个不同宽度且单调递增、收起后确认面板已卸载再展开仍从 0 重播；中途帧 80ms=15%、260ms=24%。
