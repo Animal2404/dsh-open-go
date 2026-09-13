@@ -326,6 +326,20 @@ async function main() {
   await shot(cdp, sessionId, '02-panel-quota', await evaluate(cdp, sessionId, unionBox(['.dshoq-pill', '.dshoq-panel'], 10)))
   await shot(cdp, sessionId, '02b-panel-only', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
 
+  // ── 2b. 材质探针：算样式 + 静态父链；再临时关掉 backdrop-filter 看边缘光晕是否消失 ──
+  console.log('材质探针:', JSON.stringify(await evaluate(cdp, sessionId, `(() => {
+    const cs = (el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, bgImage: (s.backgroundImage || '').slice(0, 70), border: s.borderTopWidth + ' ' + s.borderTopStyle + ' ' + s.borderTopColor, shadow: s.boxShadow, backdrop: (s.backdropFilter || s.webkitBackdropFilter || 'none'), radius: s.borderRadius } }
+    const chain = (el) => { const out = []; let n = el; for (let i = 0; i < 4 && n; i++, n = n.parentElement) { const s = getComputedStyle(n); out.push({ tag: n.tagName, cls: String(n.className).slice(0, 46), border: s.borderTopWidth + ' ' + s.borderTopColor, bg: s.backgroundColor }) } return out }
+    const p = document.querySelector('.dshoq-panel')
+    const pill = document.querySelector('.dshoq-pill')
+    return { panel: p ? cs(p) : null, pill: pill ? cs(pill) : null, pillChain: pill ? chain(pill) : null, panelParent: p ? String(p.parentElement.tagName) : null }
+  })()`)))
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-panel'); if (p) p.style.backdropFilter = 'none'; return true })()`)
+  await sleep(250)
+  await shot(cdp, sessionId, '08-panel-noblur', await evaluate(cdp, sessionId, boxOf('.dshoq-panel', 4)))
+  await evaluate(cdp, sessionId, `(() => { const p = document.querySelector('.dshoq-panel'); if (p) p.style.backdropFilter = ''; return true })()`)
+  await sleep(150)
+
   // ── 2. ⚙ 弹窗（开关关 → 开）──
   console.log('点齿轮…')
   console.log('  ', JSON.stringify(await evaluate(cdp, sessionId, `(() => { const b = document.querySelector('.dshoq-icon'); if (!b) return false; b.click(); return true })()`)))

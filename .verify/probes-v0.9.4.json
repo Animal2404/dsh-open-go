@@ -1,0 +1,33 @@
+{
+  "widget": "dsh-opencode-quota v0.9.4",
+  "verified_at": "2026-09-13T08:26+08:00",
+  "how": "node .verify/sidebar-check.mjs（无头 Chrome + CDP）+ 材质探针（计算样式 + 静态父链）+ 关掉 backdrop-filter 的对照帧",
+  "material": {
+    "pill": { "backgroundColor": "rgba(30, 30, 35, 0.6)", "border": "0px none", "backdropFilter": "blur(20px) saturate(1.7)", "boxShadow": "0 8px 22px rgba(0,0,0,.34), 0 1px 3px rgba(0,0,0,.2), inset 0 0 0 1px rgba(0,0,0,.26)", "radius": "10px" },
+    "panel": { "backgroundColor": "rgba(30, 30, 35, 0.6)", "border": "0px none", "backdropFilter": "blur(20px) saturate(1.7)", "boxShadow": "0 20px 50px rgba(0,0,0,.46), 0 3px 10px rgba(0,0,0,.24), inset 0 0 0 1px rgba(0,0,0,.26)", "radius": "14px" },
+    "borderBeforeFix": "2px outset rgb(255, 255, 255)（浏览器给 <button> 的默认边框，删掉自绘 border 后冒出来 = 用户看到的那圈白线）",
+    "noiseLayer": "inline SVG feTurbulence 120x120, opacity .26, background-size 120px 120px",
+    "sheen": "linear-gradient(180deg, rgba(255,255,255,.06), transparent 46%)",
+    "fallbackChecked": "08-panel-noblur.png（关掉 backdrop-filter 仍可读）"
+  },
+  "probes": {
+    "bundleMarkHit": 1,
+    "pillW": 256,
+    "pillH": 30,
+    "panelW": 280,
+    "panelH": 201,
+    "panelOverflowX": 0,
+    "panelOverflowY": 0,
+    "tierRows": 3,
+    "chevCollapsed": "matrix(-1, 0, 0, -1, 0, 0)",
+    "chevOpen": "none",
+    "billingCardsDefault": 0,
+    "billingCardsOn": 2,
+    "dialogW": 340,
+    "reducedMotionAnimations": 0,
+    "panelUnmountedAfterClose": 1,
+    "visibleAfterClickMs": 19
+  },
+  "numeric_summary": "pillBorderPx=0, panelBorderPx=0, pillBackgroundAlpha=0.6, backdropBlurPx=20, panelH=201, panelOverflowX=0, panelOverflowY=0, tierRows=3, billingCardsDefault=0, billingCardsOn=2, visibleAfterClickMs=19, reducedMotionAnimations=0",
+  "v094_delta": "材质换磨砂亚克力（半透明 + blur(20px) + 噪声颗粒 + 顶部微光），全部描边换成深色内圈；修掉冒出来的浏览器默认按钮白边（2px outset → 0px none）"
+}

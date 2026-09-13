@@ -107,3 +107,29 @@ README 里的 `assets/screenshot-*.png` 已同步替换成本轮截图（同一�
 4. 附带：数据已在手上时展开直接显示真值（只有真的在等数据才从 0 生长，380ms）。
 
 复跑：`node .verify/sidebar-check.mjs` → exit 0，`done`；截图与其余探针不变。
+
+---
+
+## 附：v0.9.4 追补（2026-09-13 08:26）· 磨砂亚克力材质
+
+**用户反馈**：不要白色描边，换成更高级的质感 —— 磨砂亚克力板。
+
+**诊断（材质探针，脚本已内置）**：pill 的计算样式是
+`border: 2px outset rgb(255, 255, 255)` —— 这不是插件画的，而是**浏览器给 `<button>` 的默认边框**（`2px outset ButtonBorder`，渲染成发白的 3D 边）。此前它被插件自绘的 `1px solid var(--oq-border)` 盖着，v0.9.4 一删自绘边框它就冒了出来。
+
+**改法**：
+1. 材质换成磨砂亚克力：半透明底（`rgba(30,30,35,.60)`，跟主题走）+ `backdrop-filter: blur(20px) saturate(170%)` + 内联 SVG 噪声颗粒（120×120，26%）+ 顶部一道极淡微光（46% 处收干，不是线）。
+2. 所有描边改「深色内圈 + 投影」：pill / rail / 面板 / 卡片 / GO 徽标 / 弹窗 / 开关 / 输入框 / 按钮，全部 `border:0` 显式兜底（把 UA 默认边焊死），边缘靠 `inset 0 0 0 1px rgba(0,0,0,.26)` 与投影交代。
+3. 弹窗用固定深色的同款材质（`blur(24px)`，不跟主题漂白），符合开发记录里「重要弹窗用固定色」的教训。
+
+**验证**（复跑 exit=0）：
+
+| 探针 | 值 |
+|---|---|
+| `pill.border` / `panel.border` | `0px none` / `0px none`（改前 pill 是 `2px outset rgb(255,255,255)`） |
+| `pill.backgroundColor` | `rgba(30, 30, 35, 0.6)`（改前不透明 `#232327`） |
+| `backdropFilter` | `blur(20px) saturate(1.7)` |
+| 降级对照帧 | `shots/08-panel-noblur.png`（关掉 backdrop-filter 仍可读） |
+| 其余探针 | 面板 280×201、溢出 0、三档行 3、账单默认 0 卡 / 开启 2 卡、点击 → 可见 19ms、reduced-motion 动画数 0 —— 全部不变 |
+
+截图目检：`shots/01-pill.png`（磨砂颗粒、无白线）、`shots/02b-panel-only.png`（内容透出且模糊）、`shots/03-settings-off.png`（弹窗同材质）、`shots/01b-window.png`（侧边栏里的整体观感）。
